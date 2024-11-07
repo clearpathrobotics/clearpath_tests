@@ -44,6 +44,12 @@ def launch_setup(context, *args, **kwargs):
     tests = GroupAction(
         [
             PushRosNamespace(namespace),
+            # CPU Stress
+            Node(
+                package='clearpath_tests',
+                executable='cpu_stress',
+                output='screen'
+            ),
             # Drive test
             Node(
                 package='clearpath_tests',
