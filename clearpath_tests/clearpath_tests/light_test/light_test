@@ -32,6 +32,7 @@ class LightTest(Node):
 
         self.publisher = self.create_publisher(Lights, self.lights_topic, qos_profile_system_default)
         self.publish_timer = self.create_timer(1 / self.publish_rate, self.publish_callback)
+        self.colour = 0
 
     def publish_callback(self):
         # Define the message to be sent
