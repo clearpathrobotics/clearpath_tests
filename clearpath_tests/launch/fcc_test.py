@@ -44,10 +44,17 @@ def launch_setup(context, *args, **kwargs):
     tests = GroupAction(
         [
             PushRosNamespace(namespace),
-            # Updater
+            # Drive test
             Node(
                 package='clearpath_tests',
                 executable='drive_test',
+                output='screen',
+                arguments=['-s', setup_path]
+            ),
+          # Light test
+            Node(
+                package='clearpath_tests',
+                executable='light_test',
                 output='screen',
                 arguments=['-s', setup_path]
             ),
