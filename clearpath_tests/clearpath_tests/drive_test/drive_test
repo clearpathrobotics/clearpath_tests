@@ -36,7 +36,7 @@ class DriveTest(Node):
 
         self.twist_msg = TwistStamped()
         self.twist_msg.twist.linear.x = self.max_speed
-        self.publisher = self.create_publisher(Twist, self.drive_topic, qos_profile_system_default)
+        self.publisher = self.create_publisher(TwistStamped, self.drive_topic, qos_profile_system_default)
         self.publish_count = 0
         self.flip_count = self.publish_rate / self.flip_frequency
         self.publish_timer = self.create_timer(1 / self.publish_rate, self.publish_callback)
