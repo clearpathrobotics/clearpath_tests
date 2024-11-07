@@ -26,7 +26,7 @@ class LightTest(Node):
         self.platform = self.clearpath_config.platform.get_platform_model()
 
         # Params
-        self.drive_topic = self.get_parameter_or('lights_topic', 'platform/cmd_lights')
+        self.lights_topic = self.get_parameter_or('lights_topic', 'platform/cmd_lights')
         self.publish_rate = self.get_parameter_or('publish_rate', 2)
 
 
