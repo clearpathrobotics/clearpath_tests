@@ -13,6 +13,7 @@ ament_python_install_package(${PROJECT_NAME})
 
 install(PROGRAMS
   ${PROJECT_NAME}/drive_test/drive_test
+  ${PROJECT_NAME}/fan_test/fan_test
   ${PROJECT_NAME}/light_test/light_test
   DESTINATION lib/${PROJECT_NAME}
 )

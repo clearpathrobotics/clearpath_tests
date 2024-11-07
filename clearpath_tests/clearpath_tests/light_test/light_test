@@ -5,7 +5,6 @@ from clearpath_config.common.types.platform import Platform
 from clearpath_generator_common.common import BaseGenerator
 from clearpath_platform_msgs.msg import RGB, Lights 
 
-from enum import Enum
 import os
 
 import rclpy
