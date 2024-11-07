@@ -56,7 +56,10 @@ def main():
 
     dt = DriveTest(setup_path)
 
-    rclpy.spin(dt)
+    try:
+        rclpy.spin(dt)
+    except KeyboardInterrupt:
+        pass
 
     dt.destroy_node()
     rclpy.shutdown()

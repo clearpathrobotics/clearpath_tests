@@ -84,7 +84,10 @@ def main():
 
     lt = LightTest(setup_path)
 
-    rclpy.spin(lt)
+    try:
+        rclpy.spin(lt)
+    except KeyboardInterrupt:
+        pass
 
     dt.destroy_node()
     rclpy.shutdown()
