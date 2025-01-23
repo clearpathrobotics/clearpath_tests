@@ -28,10 +28,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from clearpath_config.clearpath_config import ClearpathConfig
-from clearpath_config.common.types.platform import Platform
 from clearpath_generator_common.common import BaseGenerator
-
-from enum import Enum
 
 from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
@@ -111,9 +108,6 @@ class RotationTestNode(Node):
             self.publisher.publish(self.twist_msg)
 
     def odom_callback(self, msg):
-        """
-        Check if we've made 2 full rotations.
-        """
         xyzw = [
             msg.pose.pose.orientation.x,
             msg.pose.pose.orientation.y,
