@@ -33,7 +33,6 @@ from clearpath_generator_common.common import BaseGenerator
 from geometry_msgs.msg import PoseStamped, TwistStamped
 from nav_msgs.msg import Odometry
 
-import math
 import os
 
 import rclpy
@@ -49,14 +48,16 @@ from tf2_ros.transform_listener import TransformListener
 
 class DriveTestNode(Node):
     """
-    Uses odometry to drive 1m forwards, then backwards, etc... forever
+    Uses odometry to drive a fixed distance forwards and then stop
 
     Test assumes that the robot is on the ground, e-stops are cleared, and the area
     is free of obstacles and obstructions.
     """
 
     def __init__(self, setup_path='/etc/clearpath'):
-        super().__init__('rotation_test')
+        super().__init__('drive_test')
+
+        self.test_done = False
 
         self.setup_path = setup_path
         self.config_path = os.path.join(self.setup_path, 'robot.yaml')
@@ -65,6 +66,7 @@ class DriveTestNode(Node):
         self.platform = self.clearpath_config.platform.get_platform_model()
         self.namespace = self.clearpath_config.get_namespace()
 
+        self.goal_distance = self.get_parameter_or('distance', 5.0)
         self.base_link = self.get_parameter_or('base_link', 'base_link')
         self.enable_drive = self.get_parameter_or('enable_drive', True)
         self.drive_topic = self.get_parameter_or('drive_topic', 'cmd_vel')
@@ -102,17 +104,17 @@ class DriveTestNode(Node):
                 raise(TimeoutError('Timed out waiting for odometry'))
         else:
             self.twist_msg.header.stamp = self.get_clock().now().to_msg()
-            self.get_logger().info(f'Current position: {self.current_displacement:0.2f}m')
+            self.get_logger().info(f'Current position: {self.current_displacement:0.2f}m ({self.goal_distance}m)')  # noqa: E501
 
-            # drive 1m forwards, then reverse
-            if self.current_displacement > 1.0:
-                self.get_logger().info('Starting reverse')
-                self.twist_msg.twist.linear.x = -self.max_speed
-            elif self.current_displacement < -1.0:
-                self.get_logger().info('Starting forward')
-                self.twist_msg.twist.linear.x = self.max_speed
+            # drive 5m forwards, then stop
+            if self.current_displacement >= self.goal_distance:
+                self.get_logger().info('Reached goal')
+                self.twist_msg.twist.linear.x = 0
 
             self.publisher.publish(self.twist_msg)
+
+            if self.twist_msg.twist.linear.x == 0:
+                self.test_done = True
 
     def odom_callback(self, msg):
         odom_frame = msg.header.frame_id
@@ -146,16 +148,17 @@ def main():
     try:
         dt = DriveTestNode(setup_path)
         try:
-            rclpy.spin(dt)
+            while not dt.test_done:
+                rclpy.spin_once(dt)
+            dt.get_logger().info('Test complete')
         except KeyboardInterrupt:
             dt.get_logger().info('User aborted! Cleaning up & exiting...')
-        finally:
-            dt.destroy_node()
+        dt.destroy_node()
     except TimeoutError:
         # This error is already logged when it's raised
         pass
-    finally:
-        rclpy.shutdown()
+
+    rclpy.shutdown()
 
 
 if __name__ == '__main__':

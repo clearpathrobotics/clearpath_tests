@@ -27,10 +27,12 @@ setup(
     entry_points={
         'console_scripts': [
             'cpu_stress = clearpath_tests.cpu_stress:main',
-            'drive_test = clearpath_tests.drive_test:main',
+            'drive_test_continuous = clearpath_tests.drive_test_continuous:main',
+            'drive_test_fixed = clearpath_tests.drive_test_fixed:main',
             'fan_test = clearpath_tests.fan_test:main',
             'light_test = clearpath_tests.light_test:main',
-            'rotation_test = clearpath_tests.rotation_test:main',
+            'rotation_test_continuous = clearpath_tests.rotation_test_continuous:main',
+            'rotation_test_fixed = clearpath_tests.rotation_test_fixed:main',
         ],
     },
 )
