@@ -26,6 +26,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'all_tests = clearpath_tests.all_tests:main',
             'cpu_stress = clearpath_tests.cpu_stress:main',
             'drive_test_continuous = clearpath_tests.drive_test_continuous:main',
             'drive_test_fixed = clearpath_tests.drive_test_fixed:main',
