@@ -70,8 +70,6 @@ class RotationTestNode(TestNode):
         self.max_speed = self.get_parameter_or('max_speed', 0.2)  # slightly more than 10 deg/s
         self.publish_rate = self.get_parameter_or('publish_rate', 30)
 
-        self.test_name = f'Rotation {self.goal_rotations}x in place'
-
         if not self.odom_topic.startswith('/'):
             self.odom_topic = f'/{self.namespace}/{self.odom_topic}'
 
@@ -143,11 +141,13 @@ class RotationTestNode(TestNode):
         self.publish_timer = self.create_timer(1 / self.publish_rate, self.publish_callback)
 
     def run_test(self):
+        test_name = f'Rotation {self.goal_rotations}x in place'
+
         user_response = self.promptYN(f"""The robot will rotate {self.goal_rotations} times
 The robot must be on the ground, all e-stops cleared, and a 2m safety clearance around the robot.
 Are all these conditions met?""")
         if user_response == 'N':
-            return [TestResult(False, self.test_name, 'User skipped')]
+            return [TestResult(False, test_name, 'User skipped')]
 
         self.get_logger().info('Starting rotation test')
         self.start()
@@ -159,9 +159,9 @@ Measure the robot's actual alignment.
 Is it within 10 degrees of its original orientation?""")
         if user_response == 'N':
             measured_alignment = input("How many degrees off is the robot's alignment? ")
-            return [TestResult(False, self.test_name, f'Incorrect aligment: {measured_alignment}')]
+            return [TestResult(False, test_name, f'Incorrect aligment: {measured_alignment}')]
         else:
-            return [TestResult(True, self.test_name, None)]
+            return [TestResult(True, test_name, None)]
 
 def main():
     setup_path = BaseGenerator.get_args()

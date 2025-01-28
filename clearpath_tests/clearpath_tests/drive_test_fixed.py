@@ -75,8 +75,6 @@ class DriveTestNode(TestNode):
         self.max_speed = self.get_parameter_or('max_speed', 0.1)  # 10cm/s; nice and safe
         self.publish_rate = self.get_parameter_or('publish_rate', 30)
 
-        self.test_name = f'Drive {self.goal_distance:0.1f}m'
-
         if not self.odom_topic.startswith('/'):
             self.odom_topic = f'/{self.namespace}/{self.odom_topic}'
 
@@ -145,11 +143,13 @@ class DriveTestNode(TestNode):
         self.publish_timer = self.create_timer(1 / self.publish_rate, self.publish_callback)
 
     def run_test(self):
+        test_name = f'Drive {self.goal_distance:0.1f}m'
+
         user_response = self.promptYN(f"""The robot will drive forwards approximately {self.goal_distance}m
 The robot must be on the ground, all e-stops cleared, and a 2m safety clearance around the robot.
 Are all these conditions met?""")
         if user_response == 'N':
-            return [TestResult(False, self.test_name, 'User skipped')]
+            return [TestResult(False, test_name, 'User skipped')]
 
         self.get_logger().info('Starting drive test')
         self.start()
@@ -161,9 +161,9 @@ Measure the robot's actual displacement.
 Is it between {self.goal_distance * 0.9:0.2f}m and {self.goal_distance * 1.1:0.2f}m?""")
         if user_response == 'N':
             measured_distance = input('How far did the robot actually drive (in meters)? ')
-            return [TestResult(False, self.test_name, f'Incorrect distance: {measured_distance}')]
+            return [TestResult(False, test_name, f'Incorrect distance: {measured_distance}')]
         else:
-            return [TestResult(True, self.test_name, None)]
+            return [TestResult(True, test_name, None)]
 
 def main():
     setup_path = BaseGenerator.get_args()

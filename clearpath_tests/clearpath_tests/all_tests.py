@@ -68,6 +68,7 @@ class TestingNode(Node):
         Platform.A200: [
         ],
         Platform.A300: [
+            fan_test.FanTestNode
         ],
         Platform.DD100: [
         ],
@@ -92,7 +93,7 @@ class TestingNode(Node):
 
         self.report_file = self.get_parameter_or(
             'report_file',
-            f'/tmp/clearpath_test_results.{datetime.now().strftime("202501281032")}.md'
+            f'/tmp/clearpath_test_results.{datetime.now().strftime("%Y%m%d%H%M")}.md'
         )
 
         self.setup_path = self.get_parameter_or('setup_path', '/etc/clearpath')
@@ -235,6 +236,9 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
                 results = node.run_test()
             except Exception as err:
                 results = [TestResult(False, node.test_name, str(err))]
+
+            with open(self.report_file, 'a') as report:
+                report.write(f'### {node.test_name}\n\n')
 
             for result in results:
                 self.log_result(result)
