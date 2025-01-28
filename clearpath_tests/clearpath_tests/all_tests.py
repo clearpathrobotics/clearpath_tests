@@ -54,21 +54,20 @@ from clearpath_tests import (
     light_test,
     rotation_test_fixed,
 )
+from clearpath_tests.test_node import TestResult
 
 
 class TestingNode(Node):
 
     common_tests = [
-        drive_test_fixed,
-        rotation_test_fixed,
+        rotation_test_fixed.RotationTestNode,
+        drive_test_fixed.DriveTestNode,
     ]
 
     tests_for_platform = {
         Platform.A200: [
         ],
         Platform.A300: [
-            light_test,
-            fan_test,
         ],
         Platform.DD100: [
         ],
@@ -100,6 +99,8 @@ class TestingNode(Node):
         self.setup_file = os.path.join(self.setup_path, 'robot.yaml')
         self.clearpath_config = ClearpathConfig(read_yaml(self.setup_file))
 
+        self.test_results = []
+
     def destroy_node(self):
         """
         Clean up any in-progress tests.
@@ -109,7 +110,29 @@ class TestingNode(Node):
         return super().destroy_node()
 
     def print_summary(self):
-        print('TODO: report summary')
+        longest_test_name = 'Test'  # initialize t row header
+        longest_test_message = 'Message'  # initialize to row header
+        for result in self.test_results:
+            if len(result.name) > len(longest_test_name):
+                longest_test_name = result.name
+            if result.message and len(result.message) > len(longest_test_message):
+                longest_test_message = result.message
+
+        test_column_width = len(longest_test_name)
+        result_column_width = len('Result')
+        message_column_width = len(longest_test_message)
+
+        table_md = f'| {"Test".ljust(test_column_width)} | Result | {"Message".ljust(message_column_width)} |\n'
+        table_md = table_md + f'|-{"-"*test_column_width}-|-{"-"*result_column_width}-|-{"-"*message_column_width}-|\n'
+
+        for result in self.test_results:
+            table_md = table_md + f'| {result.name.ljust(test_column_width)} | {("Pass" if result.success else "Fail").ljust(result_column_width)} | {(result.message if result.message else "").ljust(message_column_width)} |\n'
+
+        print(f'\n\nSummary:\n{table_md}\n')
+
+        with open(self.report_file, 'a') as report:
+            report.write('\n## Summary\n')
+            report.write(table_md)
 
     def write_header(self):
         """
@@ -131,6 +154,9 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
 ## robot.yaml
 """)
         self.copy_file_contents(self.setup_file, 'yaml')
+
+        with open(self.report_file, 'a') as report:
+            report.write('\n## Test results\n\n')
 
     def copy_file_contents(self, path, format=None):
         """
@@ -175,6 +201,17 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
 
             report.write('```\n')
 
+    def log_result(self, test_result: TestResult):
+        """
+        Log the results of a test to the report
+
+        @param test_result  The result we want to log
+        """
+        self.test_results.append(test_result)
+
+        with open(self.report_file, 'a') as report:
+            report.write(f'{test_result}\n\n')
+
     def run_tests(self):
         """
         Go through the tests one at a time, logging the results as we go
@@ -182,13 +219,27 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
         The exact tests executed depends on the configured platform
         """
         self.write_header()
-
         platfom = self.clearpath_config.get_platform_model()
-        for test in self.tests_for_platform[platfom]:
-            test.main()
 
+        tests_to_run = []
+        for test in self.tests_for_platform[platfom]:
+            tests_to_run.append(test)
         for test in self.common_tests:
-            test.main()
+            tests_to_run.append(test)
+
+        n = 1
+        for test in tests_to_run:
+            self.get_logger().info(f'Starting test {n} of {len(tests_to_run)}')
+            node = test()
+            try:
+                results = node.run_test()
+            except Exception as err:
+                results = [TestResult(False, node.test_name, str(err))]
+
+            for result in results:
+                self.log_result(result)
+
+            n += 1
 
 
 

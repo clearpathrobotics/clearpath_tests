@@ -30,6 +30,8 @@
 from clearpath_config.clearpath_config import ClearpathConfig
 from clearpath_generator_common.common import BaseGenerator
 
+from clearpath_tests.test_node import TestNode, TestResult
+
 from geometry_msgs.msg import PoseStamped, TwistStamped
 from nav_msgs.msg import Odometry
 
@@ -37,7 +39,6 @@ import os
 
 import rclpy
 from rclpy.duration import Duration
-from rclpy.node import Node
 from rclpy.qos import qos_profile_system_default, qos_profile_sensor_data
 
 from tf2_geometry_msgs import do_transform_pose_stamped
@@ -46,7 +47,7 @@ from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 
 
-class DriveTestNode(Node):
+class DriveTestNode(TestNode):
     """
     Uses odometry to drive a fixed distance forwards and then stop
 
@@ -55,7 +56,7 @@ class DriveTestNode(Node):
     """
 
     def __init__(self, setup_path='/etc/clearpath'):
-        super().__init__('drive_test')
+        super().__init__('Drive Fixed Distance', 'drive_test')
 
         self.test_done = False
 
@@ -74,6 +75,8 @@ class DriveTestNode(Node):
         self.max_speed = self.get_parameter_or('max_speed', 0.1)  # 10cm/s; nice and safe
         self.publish_rate = self.get_parameter_or('publish_rate', 30)
 
+        self.test_name = f'Drive {self.goal_distance:0.1f}m'
+
         if not self.odom_topic.startswith('/'):
             self.odom_topic = f'/{self.namespace}/{self.odom_topic}'
 
@@ -86,15 +89,6 @@ class DriveTestNode(Node):
 
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
-
-        self.start_time = self.get_clock().now()
-        self.odom_timeout = Duration(seconds=10)
-        self.initial_position = None
-        self.odom_sub = self.create_subscription(Odometry, self.odom_topic, self.odom_callback, qos_profile_sensor_data)  # noqa: E501
-
-        self.get_logger().info(f'Waiting for odometry on {self.odom_topic}...')
-        self.publisher = self.create_publisher(TwistStamped, self.drive_topic, qos_profile_system_default)  # noqa: E501
-        self.publish_timer = self.create_timer(1 / self.publish_rate, self.publish_callback)
 
     def publish_callback(self):
         if self.initial_position is None:
@@ -109,7 +103,7 @@ class DriveTestNode(Node):
             # drive 5m forwards, then stop
             if self.current_displacement >= self.goal_distance:
                 self.get_logger().info('Reached goal')
-                self.twist_msg.twist.linear.x = 0
+                self.twist_msg.twist.linear.x = 0.0
 
             self.publisher.publish(self.twist_msg)
 
@@ -140,6 +134,36 @@ class DriveTestNode(Node):
         else:
             self.current_displacement = transformed_pose.pose.position.x - self.initial_position.x  # noqa: E501
 
+    def start(self):
+        self.start_time = self.get_clock().now()
+        self.odom_timeout = Duration(seconds=10)
+        self.initial_position = None
+        self.odom_sub = self.create_subscription(Odometry, self.odom_topic, self.odom_callback, qos_profile_sensor_data)  # noqa: E501
+
+        self.get_logger().info(f'Waiting for odometry on {self.odom_topic}...')
+        self.publisher = self.create_publisher(TwistStamped, self.drive_topic, qos_profile_system_default)  # noqa: E501
+        self.publish_timer = self.create_timer(1 / self.publish_rate, self.publish_callback)
+
+    def run_test(self):
+        user_response = self.promptYN(f"""The robot will drive forwards approximately {self.goal_distance}m
+The robot must be on the ground, all e-stops cleared, and a 2m safety clearance around the robot.
+Are all these conditions met?""")
+        if user_response == 'N':
+            return [TestResult(False, self.test_name, 'User skipped')]
+
+        self.get_logger().info('Starting drive test')
+        self.start()
+        while not self.test_done:
+            rclpy.spin_once(self)
+
+        user_response = self.promptYN(f"""Test complete.
+Measure the robot's actual displacement.
+Is it between {self.goal_distance * 0.9:0.2f}m and {self.goal_distance * 1.1:0.2f}m?""")
+        if user_response == 'N':
+            measured_distance = input('How far did the robot actually drive (in meters)? ')
+            return [TestResult(False, self.test_name, f'Incorrect distance: {measured_distance}')]
+        else:
+            return [TestResult(True, self.test_name, None)]
 
 def main():
     setup_path = BaseGenerator.get_args()
@@ -147,6 +171,7 @@ def main():
 
     try:
         dt = DriveTestNode(setup_path)
+        dt.start()
         try:
             while not dt.test_done:
                 rclpy.spin_once(dt)

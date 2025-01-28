@@ -30,6 +30,8 @@
 from clearpath_config.clearpath_config import ClearpathConfig
 from clearpath_generator_common.common import BaseGenerator
 
+from clearpath_tests.test_node import TestNode, TestResult
+
 from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
 
@@ -38,13 +40,12 @@ import os
 
 import rclpy
 from rclpy.duration import Duration
-from rclpy.node import Node
 from rclpy.qos import qos_profile_system_default, qos_profile_sensor_data
 
 from tf_transformations import euler_from_quaternion
 
 
-class RotationTestNode(Node):
+class RotationTestNode(TestNode):
     """
     Uses odometry to rotate n complete rotations and then stops
 
@@ -53,7 +54,7 @@ class RotationTestNode(Node):
     """
 
     def __init__(self, setup_path='/etc/clearpath'):
-        super().__init__('rotation_test')
+        super().__init__('Rotation in place', 'rotation_test')
 
         self.setup_path = setup_path
         self.config_path = os.path.join(self.setup_path, 'robot.yaml')
@@ -69,6 +70,8 @@ class RotationTestNode(Node):
         self.max_speed = self.get_parameter_or('max_speed', 0.2)  # slightly more than 10 deg/s
         self.publish_rate = self.get_parameter_or('publish_rate', 30)
 
+        self.test_name = f'Rotation {self.goal_rotations}x in place'
+
         if not self.odom_topic.startswith('/'):
             self.odom_topic = f'/{self.namespace}/{self.odom_topic}'
 
@@ -81,17 +84,6 @@ class RotationTestNode(Node):
         self.test_done = False
         self.twist_msg = TwistStamped()
         self.twist_msg.twist.angular.z = self.max_speed
-
-        self.start_time = self.get_clock().now()
-        self.odom_timeout = Duration(seconds=10)
-        self.initial_yaw = None
-        self.odom_sub = self.create_subscription(Odometry, self.odom_topic, self.odom_callback, qos_profile_sensor_data)  # noqa: E501
-
-        self.get_logger().info(f'Waiting for odometry on {self.odom_topic}...')
-        self.last_rotation_complete_at = self.get_clock().now()
-        self.min_rotation_duration = Duration(seconds=3.0)
-        self.publisher = self.create_publisher(TwistStamped, self.drive_topic, qos_profile_system_default)  # noqa: E501
-        self.publish_timer = self.create_timer(1 / self.publish_rate, self.publish_callback)
 
     def publish_callback(self):
         if self.initial_yaw is None:
@@ -138,6 +130,38 @@ class RotationTestNode(Node):
             self.previous_orientation = self.current_orientation
             self.current_orientation = rpy[2] - self.initial_yaw
 
+    def start(self):
+        self.start_time = self.get_clock().now()
+        self.odom_timeout = Duration(seconds=10)
+        self.initial_yaw = None
+        self.odom_sub = self.create_subscription(Odometry, self.odom_topic, self.odom_callback, qos_profile_sensor_data)  # noqa: E501
+
+        self.get_logger().info(f'Waiting for odometry on {self.odom_topic}...')
+        self.last_rotation_complete_at = self.get_clock().now()
+        self.min_rotation_duration = Duration(seconds=3.0)
+        self.publisher = self.create_publisher(TwistStamped, self.drive_topic, qos_profile_system_default)  # noqa: E501
+        self.publish_timer = self.create_timer(1 / self.publish_rate, self.publish_callback)
+
+    def run_test(self):
+        user_response = self.promptYN(f"""The robot will rotate {self.goal_rotations} times
+The robot must be on the ground, all e-stops cleared, and a 2m safety clearance around the robot.
+Are all these conditions met?""")
+        if user_response == 'N':
+            return [TestResult(False, self.test_name, 'User skipped')]
+
+        self.get_logger().info('Starting rotation test')
+        self.start()
+        while not self.test_done:
+            rclpy.spin_once(self)
+
+        user_response = self.promptYN("""Test complete.
+Measure the robot's actual alignment.
+Is it within 10 degrees of its original orientation?""")
+        if user_response == 'N':
+            measured_alignment = input("How many degrees off is the robot's alignment? ")
+            return [TestResult(False, self.test_name, f'Incorrect aligment: {measured_alignment}')]
+        else:
+            return [TestResult(True, self.test_name, None)]
 
 def main():
     setup_path = BaseGenerator.get_args()
@@ -145,6 +169,7 @@ def main():
 
     try:
         rt = RotationTestNode(setup_path)
+        rt.start()
         try:
             while not rt.test_done:
                 rclpy.spin_once(rt)

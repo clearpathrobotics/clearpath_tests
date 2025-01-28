@@ -62,18 +62,15 @@ def launch_setup(context, *args, **kwargs):
     clearpath_config = ClearpathConfig(config)
 
     namespace = clearpath_config.system.namespace
-    tests = GroupAction(
-        [
-            PushRosNamespace(namespace),
-            Node(
-                package='clearpath_tests',
-                executable='all_tests',
-                output='screen'
-            ),
-        ]
+    test_node = Node(
+        namespace=namespace,
+        package='clearpath_tests',
+        executable='all_tests',
+        output='screen',
+        emulate_tty=True,
     )
 
-    return [tests]
+    return [test_node]
 
 
 def generate_launch_description():
