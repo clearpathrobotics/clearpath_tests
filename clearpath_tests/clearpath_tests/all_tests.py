@@ -110,7 +110,12 @@ class TestingNode(Node):
         """
         return super().destroy_node()
 
-    def print_summary(self):
+    def create_summary(self):
+        """
+        Prints the summary table of all tests and appends the same table to the report.
+
+        Also prints out a one/two line summary of the number of tests passed/failed.
+        """
         longest_test_name = 'Test'  # initialize t row header
         longest_test_message = 'Message'  # initialize to row header
         for result in self.test_results:
@@ -134,6 +139,19 @@ class TestingNode(Node):
         with open(self.report_file, 'a') as report:
             report.write('\n## Summary\n')
             report.write(table_md)
+
+        n_passed = 0
+        n_failed = 0
+        for result in self.test_results:
+            if result.success:
+                n_passed += 1
+            else:
+                n_failed += 1
+
+        if n_failed:
+            print('\nAll tests passed!')
+        else:
+            print(f'\n{n_passed} tests passed\n{n_failed} test failed')
 
     def write_header(self):
         """
@@ -245,6 +263,7 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
 
             n += 1
 
+        self.create_summary()
 
 
 def main(args=None):
@@ -254,7 +273,6 @@ def main(args=None):
     try:
         test_node.run_tests()
         print(f'Tests complete. See {test_node.report_file} for full results')
-        test_node.print_summary()
     except FileNotFoundError as err:
         test_node.get_logger().error(f'Failed to write report: {err}')
     except PermissionError as err:
