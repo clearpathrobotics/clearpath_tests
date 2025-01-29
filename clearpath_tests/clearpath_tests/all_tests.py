@@ -154,7 +154,7 @@ class TestingNode(Node):
         if n_failed == 0:
             print('\nAll tests passed!\n')
         else:
-            print(f'\n{n_passed} tests passed\n{n_failed} test failed\n')
+            print(f'\n{n_passed} tests passed\n{n_failed} tests failed\n')
 
     def write_header(self):
         """
