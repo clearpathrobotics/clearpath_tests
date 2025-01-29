@@ -71,6 +71,8 @@ class ConfigurableTransformListener(TransformListener):
         :param spin_thread: Whether to create a dedidcated thread to spin this node.
         :param qos: A QoSProfile or a history depth to apply to subscribers.
         :param static_qos: A QoSProfile or a history depth to apply to tf_static subscribers.
+        :param tf_topic: The dynamic tf topic
+        :param tf_static_topic: The static tf topic
         """
         if qos is None:
             qos = QoSProfile(
