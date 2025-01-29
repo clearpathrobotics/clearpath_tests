@@ -30,7 +30,11 @@
 from clearpath_config.clearpath_config import ClearpathConfig
 from clearpath_generator_common.common import BaseGenerator
 
-from clearpath_tests.test_node import TestNode, TestResult
+from clearpath_tests.test_node import (
+    ConfigurableTransformListener,
+    TestNode,
+    TestResult
+)
 
 from geometry_msgs.msg import PoseStamped, TwistStamped
 from nav_msgs.msg import Odometry
@@ -86,7 +90,12 @@ class DriveTestNode(TestNode):
         self.twist_msg.twist.linear.x = self.max_speed
 
         self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self)
+        self.tf_listener = ConfigurableTransformListener(
+            self.tf_buffer,
+            self,
+            tf_topic=f'/{self.clearpath_config.get_namespace()}/tf',
+            tf_static_topic=f'/{self.clearpath_config.get_namespace()}/tf_static'
+        )
 
     def publish_callback(self):
         if self.initial_position is None:
