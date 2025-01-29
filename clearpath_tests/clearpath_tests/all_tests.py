@@ -131,27 +131,30 @@ class TestingNode(Node):
         table_md = f'| {"Test".ljust(test_column_width)} | Result | {"Message".ljust(message_column_width)} |\n'
         table_md = table_md + f'|-{"-"*test_column_width}-|-{"-"*result_column_width}-|-{"-"*message_column_width}-|\n'
 
-        for result in self.test_results:
-            table_md = table_md + f'| {result.name.ljust(test_column_width)} | {("Pass" if result.success else "Fail").ljust(result_column_width)} | {(result.message if result.message else "").ljust(message_column_width)} |\n'
-
-        print(f'\n\nSummary:\n{table_md}\n')
-
-        with open(self.report_file, 'a') as report:
-            report.write('\n## Summary\n')
-            report.write(table_md)
-
         n_passed = 0
         n_failed = 0
         for result in self.test_results:
+            table_md = table_md + f'| {result.name.ljust(test_column_width)} | {("Pass" if result.success else "Fail").ljust(result_column_width)} | {(result.message if result.message else "").ljust(message_column_width)} |\n'
             if result.success:
                 n_passed += 1
             else:
                 n_failed += 1
 
-        if n_failed:
-            print('\nAll tests passed!')
+        with open(self.report_file, 'a') as report:
+            report.write('\n## Summary\n')
+            report.write(table_md)
+            report.write('\n')
+            if n_failed == 0:
+                report.write('- all tests passed')
+            else:
+                report.write(f'- {n_passed} tests passed\n')
+                report.write(f'- {n_failed} tests failed\n')
+
+        print(f'\n\nSummary:\n{table_md}')
+        if n_failed == 0:
+            print('\nAll tests passed!\n')
         else:
-            print(f'\n{n_passed} tests passed\n{n_failed} test failed')
+            print(f'\n{n_passed} tests passed\n{n_failed} test failed\n')
 
     def write_header(self):
         """
@@ -272,7 +275,7 @@ def main(args=None):
 
     try:
         test_node.run_tests()
-        print(f'Tests complete. See {test_node.report_file} for full results')
+        print(f'\nTests complete. See {test_node.report_file} for full results')
     except FileNotFoundError as err:
         test_node.get_logger().error(f'Failed to write report: {err}')
     except PermissionError as err:
