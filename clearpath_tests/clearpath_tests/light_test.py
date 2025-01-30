@@ -48,11 +48,27 @@ class LightTestNode(TestNode):
             self.front_right = [Lights.A300_LIGHTS_FRONT_RIGHT]
             self.back_left = [Lights.A300_LIGHTS_REAR_LEFT]
             self.back_right = [Lights.A300_LIGHTS_REAR_RIGHT]
+
+            self.top_row = [
+                Lights.A300_LIGHTS_FRONT_LEFT,
+                Lights.A300_LIGHTS_FRONT_RIGHT,
+                Lights.A300_LIGHTS_REAR_LEFT,
+                Lights.A300_LIGHTS_REAR_RIGHT,
+            ]
+            self.bottom_row = []
         elif self.platform == Platform.W200:
             self.front_left = [Lights.W200_LIGHTS_FRONT_LEFT]
             self.front_right = [Lights.W200_LIGHTS_FRONT_RIGHT]
             self.back_left = [Lights.W200_LIGHTS_REAR_LEFT]
             self.back_right = [Lights.W200_LIGHTS_REAR_RIGHT]
+
+            self.top_row = [
+                Lights.W200_LIGHTS_FRONT_LEFT,
+                Lights.W200_LIGHTS_FRONT_RIGHT,
+                Lights.W200_LIGHTS_REAR_LEFT,
+                Lights.W200_LIGHTS_REAR_RIGHT,
+            ]
+            self.bottom_row = []
         elif self.platform == Platform.R100:
             self.front_left = [
                 Lights.R100_LIGHTS_FRONT_PORT_UPPER,
@@ -70,6 +86,19 @@ class LightTestNode(TestNode):
                 Lights.R100_LIGHTS_REAR_STARBOARD_UPPER,
                 Lights.R100_LIGHTS_REAR_STARBOARD_LOWER
             ]
+
+            self.top_row = [
+                Lights.R100_LIGHTS_FRONT_PORT_UPPER,
+                Lights.R100_LIGHTS_FRONT_STARBOARD_UPPER,
+                Lights.R100_LIGHTS_REAR_PORT_UPPER,
+                Lights.R100_LIGHTS_REAR_STARBOARD_UPPER,
+            ]
+            self.bottom_row = [
+                Lights.R100_LIGHTS_FRONT_PORT_LOWER,
+                Lights.R100_LIGHTS_FRONT_STARBOARD_LOWER,
+                Lights.R100_LIGHTS_REAR_PORT_LOWER,
+                Lights.R100_LIGHTS_REAR_STARBOARD_LOWER,
+            ]
         elif (
             self.platform == Platform.DD100 or
             self.platform == Platform.DO100
@@ -78,6 +107,14 @@ class LightTestNode(TestNode):
             self.front_right = [Lights.D100_LIGHTS_FRONT_RIGHT]
             self.back_left = [Lights.D100_LIGHTS_REAR_LEFT]
             self.back_right = [Lights.D100_LIGHTS_REAR_RIGHT]
+
+            self.top_row = [
+                Lights.D100_LIGHTS_FRONT_LEFT,
+                Lights.D100_LIGHTS_FRONT_RIGHT,
+                Lights.D100_LIGHTS_REAR_LEFT,
+                Lights.D100_LIGHTS_REAR_RIGHT,
+            ]
+            self.bottom_row = []
         elif (
             self.platform == Platform.DD150 or
             self.platform == Platform.DO150
@@ -86,14 +123,25 @@ class LightTestNode(TestNode):
             self.front_right = [Lights.D150_LIGHTS_FRONT_RIGHT]
             self.back_left = [Lights.D150_LIGHTS_REAR_LEFT]
             self.back_right = [Lights.D150_LIGHTS_REAR_RIGHT]
+
+            self.top_row = [
+                Lights.D150_LIGHTS_FRONT_LEFT,
+                Lights.D150_LIGHTS_FRONT_RIGHT,
+                Lights.D150_LIGHTS_REAR_LEFT,
+                Lights.D150_LIGHTS_REAR_RIGHT,
+            ]
+            self.bottom_row = []
         else:
             self.get_logger().warning(
-                f'Unknown platform {self.platform}: unable to determine lighting indices'
+                f'Unsupported platform {self.platform}: unable to determine lighting indices'
             )
             self.front_left = []
             self.front_right = []
             self.back_left = []
             self.back_right = []
+
+            self.top_row = []
+            self.bottom_row = []
 
 
         # Params
@@ -293,9 +341,43 @@ class LightTestNode(TestNode):
         else:
             results.append(TestResult(True, 'Back right white', None))
 
-        # TODO: Ridgeback has 2 lights per corner (top and bottom)
-        # tests should be expanded to test those individually too
-        # But for now just checking each corner is sufficient
+        # This test only applies to R100, since it's the only platform (currently)
+        # with two rows of independently-controlled lights
+        if len(self.bottom_row) > 0 and len(self.top_row) > 0:
+            # test each row of lights
+            for i in range(self.light_zones):
+                if i in self.top_row:
+                    self.msg.lights[i].red = 255
+                    self.msg.lights[i].green = 255
+                    self.msg.lights[i].blue = 255
+                else:
+                    self.msg.lights[i].red = 0
+                    self.msg.lights[i].green = 0
+                    self.msg.lights[i].blue = 0
+            self.publisher.publish(self.msg)
+            user_input = self.promptYN('Is the top row of lights white and bottom row off?')
+            if user_input == 'N':
+                notes = input('Briefly describe the problem > ')
+                results.append(TestResult(False, 'Top row white', notes))
+            else:
+                results.append(TestResult(True, 'Top row white', None))
+
+            for i in range(self.light_zones):
+                if i in self.bottom_row:
+                    self.msg.lights[i].red = 255
+                    self.msg.lights[i].green = 255
+                    self.msg.lights[i].blue = 255
+                else:
+                    self.msg.lights[i].red = 0
+                    self.msg.lights[i].green = 0
+                    self.msg.lights[i].blue = 0
+            self.publisher.publish(self.msg)
+            user_input = self.promptYN('Is the bottom row of lights white and top row off?')
+            if user_input == 'N':
+                notes = input('Briefly describe the problem > ')
+                results.append(TestResult(False, 'Bottom row white', notes))
+            else:
+                results.append(TestResult(True, 'Bottom row white', None))
 
         return results
 
