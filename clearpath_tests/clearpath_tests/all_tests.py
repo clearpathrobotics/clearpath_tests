@@ -71,8 +71,8 @@ class TestingNode(Node):
 
         self.common_tests = [
             wifi_test.WifiTestNode(),
-            rotation_test_fixed.RotationTestNode(),
-            drive_test_fixed.DriveTestNode(),
+            rotation_test.RotationTestNode(),
+            drive_test.DriveTestNode(),
         ]
 
         self.tests_for_platform = []
