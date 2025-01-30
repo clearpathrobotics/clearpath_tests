@@ -48,7 +48,6 @@ from rclpy.qos import qos_profile_system_default, qos_profile_sensor_data
 from tf2_geometry_msgs import do_transform_pose_stamped
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
-from tf2_ros.transform_listener import TransformListener
 
 
 class DriveTestNode(TestNode):
@@ -60,16 +59,7 @@ class DriveTestNode(TestNode):
     """
 
     def __init__(self, setup_path='/etc/clearpath'):
-        super().__init__('Drive Fixed Distance', 'drive_test')
-
-        self.test_done = False
-
-        self.setup_path = setup_path
-        self.config_path = os.path.join(self.setup_path, 'robot.yaml')
-
-        self.clearpath_config = ClearpathConfig(self.config_path)
-        self.platform = self.clearpath_config.platform.get_platform_model()
-        self.namespace = self.clearpath_config.get_namespace()
+        super().__init__('Drive Fixed Distance', 'drive_test', setup_path)
 
         self.goal_distance = self.get_parameter_or('distance', 5.0)
         self.base_link = self.get_parameter_or('base_link', 'base_link')

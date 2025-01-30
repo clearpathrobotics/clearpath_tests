@@ -59,46 +59,56 @@ from clearpath_tests.test_node import TestResult
 
 class TestingNode(Node):
 
-    common_tests = [
-        rotation_test_fixed.RotationTestNode,
-        drive_test_fixed.DriveTestNode,
-    ]
-
-    tests_for_platform = {
-        Platform.A200: [
-        ],
-        Platform.A300: [
-            fan_test.FanTestNode
-        ],
-        Platform.DD100: [
-        ],
-        Platform.DD150: [
-        ],
-        Platform.DO100: [
-        ],
-        Platform.DO150: [
-        ],
-        Platform.GENERIC: [
-        ],
-        Platform.J100: [
-        ],
-        Platform.R100: [
-        ],
-        Platform.W200: [
-        ]
-    }
-
     def __init__(self, node_name='clearpath_production_test_node'):
         super().__init__(node_name)
-
-        self.report_file = self.get_parameter_or(
-            'report_file',
-            f'/tmp/clearpath_test_results.{datetime.now().strftime("%Y%m%d%H%M")}.md'
-        )
 
         self.setup_path = self.get_parameter_or('setup_path', '/etc/clearpath')
         self.setup_file = os.path.join(self.setup_path, 'robot.yaml')
         self.clearpath_config = ClearpathConfig(read_yaml(self.setup_file))
+
+        self.platform = self.clearpath_config.get_platform_model()
+
+        self.common_tests = [
+            rotation_test_fixed.RotationTestNode(),
+            drive_test_fixed.DriveTestNode(),
+        ]
+
+        self.tests_for_platform = []
+
+        if self.platform == Platform.A200:
+            pass
+        elif self.platform == Platform.A300:
+            self.tests_for_platform.append(fan_test.FanTestNode(4))
+            self.tests_for_platform.append(light_test.LightTestNode(4))
+        elif(
+            self.platform == Platform.DD100 or
+            self.platform == Platform.DD150 or
+            self.platform == Platform.DO100 or
+            self.platform == Platform.DO150
+        ):
+            self.tests_for_platform.append(light_test.LightTestNode(4))
+        elif self.platform == Platform.GENERIC:
+            pass
+        elif self.platform == Platform.J100:
+            pass
+        elif self.platform == Platform.R100:
+            self.tests_for_platform.append(light_test.LightTestNode(8))
+        elif self.platform == Platform.W200:
+            self.tests_for_platform.append(light_test.LightTestNode(4))
+
+        if os.environ['HOME']:
+            default_log_dir = os.environ['HOME']
+        else:
+            self.get_logger().warning('$HOME is undefined; using /tmp as default report location')
+            default_log_dir = '/tmp'
+
+        self.report_file = self.get_parameter_or(
+            'report_file',
+            os.path.join(
+                default_log_dir,
+                f'clearpath_test_results.{datetime.now().strftime("%Y%m%d%H%M")}.md'
+            )
+        )
 
         self.test_results = []
 
@@ -117,7 +127,7 @@ class TestingNode(Node):
         Also prints out a one/two line summary of the number of tests passed/failed.
         """
         longest_test_name = 'Test'  # initialize t row header
-        longest_test_message = 'Message'  # initialize to row header
+        longest_test_message = 'Notes'  # initialize to row header
         for result in self.test_results:
             if len(result.name) > len(longest_test_name):
                 longest_test_name = result.name
@@ -128,7 +138,7 @@ class TestingNode(Node):
         result_column_width = len('Result')
         message_column_width = len(longest_test_message)
 
-        table_md = f'| {"Test".ljust(test_column_width)} | Result | {"Message".ljust(message_column_width)} |\n'
+        table_md = f'| {"Test".ljust(test_column_width)} | Result | {"Notes".ljust(message_column_width)} |\n'
         table_md = table_md + f'|-{"-"*test_column_width}-|-{"-"*result_column_width}-|-{"-"*message_column_width}-|\n'
 
         n_passed = 0
@@ -241,18 +251,16 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
         The exact tests executed depends on the configured platform
         """
         self.write_header()
-        platfom = self.clearpath_config.get_platform_model()
 
         tests_to_run = []
-        for test in self.tests_for_platform[platfom]:
+        for test in self.tests_for_platform:
             tests_to_run.append(test)
         for test in self.common_tests:
             tests_to_run.append(test)
 
         n = 1
-        for test in tests_to_run:
+        for node in tests_to_run:
             self.get_logger().info(f'Starting test {n} of {len(tests_to_run)}')
-            node = test()
             try:
                 results = node.run_test()
             except Exception as err:

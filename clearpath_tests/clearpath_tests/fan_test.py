@@ -27,32 +27,20 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from clearpath_config.clearpath_config import ClearpathConfig
-from clearpath_config.common.types.platform import Platform
 from clearpath_generator_common.common import BaseGenerator
 from clearpath_platform_msgs.msg import Fans
 from clearpath_tests.test_node import TestNode, TestResult
-
-import os
 
 import rclpy
 from rclpy.qos import qos_profile_system_default
 
 class FanTestNode(TestNode):
 
-    def __init__(self, setup_path='/etc/clearpath'):
-        super().__init__('Fans', 'fan_test')
-        # self.setup_path = setup_path
-
-        # # Define paths
-        # self.config_path = os.path.join(self.setup_path, 'robot.yaml')
-
-        # # Parse YAML into config
-        # self.clearpath_config = ClearpathConfig(self.config_path)
-        # self.platform = self.clearpath_config.platform.get_platform_model()
+    def __init__(self, n_fans=4, setup_path='/etc/clearpath'):
+        super().__init__('Fans', 'fan_test', setup_path)
 
         # Params
-        self.n_fans = self.get_parameter_or('num_fans', 4)
+        self.n_fans = self.get_parameter_or('num_fans', n_fans)
         self.fans_topic = self.get_parameter_or('fans_topic', 'platform/mcu/cmd_fans')
         self.publish_rate = self.get_parameter_or('publish_rate', 2)
 

@@ -27,6 +27,10 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import os
+
+from clearpath_config.clearpath_config import ClearpathConfig
+
 from typing import Optional
 from typing import Union
 
@@ -141,9 +145,20 @@ class TestNode(Node):
     multi-element testing suite
     """
 
-    def __init__(self, test_name, node_name: str):
+    def __init__(self, test_name: str, node_name: str, setup_path: str = '/etc/clearpath'):
         super().__init__(node_name)
         self.test_name = test_name
+
+        self.test_done = False
+
+        # Define paths
+        self.setup_path = setup_path
+        self.config_path = os.path.join(self.setup_path, 'robot.yaml')
+
+        # Parse YAML into config
+        self.clearpath_config = ClearpathConfig(self.config_path)
+        self.platform = self.clearpath_config.platform.get_platform_model()
+        self.namespace = self.clearpath_config.get_namespace()
 
     def run_test(self):
         """

@@ -54,14 +54,7 @@ class RotationTestNode(TestNode):
     """
 
     def __init__(self, setup_path='/etc/clearpath'):
-        super().__init__('Rotation in place', 'rotation_test')
-
-        self.setup_path = setup_path
-        self.config_path = os.path.join(self.setup_path, 'robot.yaml')
-
-        self.clearpath_config = ClearpathConfig(self.config_path)
-        self.platform = self.clearpath_config.platform.get_platform_model()
-        self.namespace = self.clearpath_config.get_namespace()
+        super().__init__('Rotation in place', 'rotation_test', setup_path)
 
         self.goal_rotations = self.get_parameter_or('rotations', 2)
         self.enable_drive = self.get_parameter_or('enable_drive', True)
