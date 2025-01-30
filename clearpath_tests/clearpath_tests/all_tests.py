@@ -49,10 +49,10 @@ from clearpath_config.common.types.platform import Platform
 from clearpath_config.common.utils.yaml import read_yaml
 
 from clearpath_tests import (
-    drive_test_fixed,
+    drive_test,
     fan_test,
     light_test,
-    rotation_test_fixed,
+    rotation_test,
     wifi_test,
 )
 from clearpath_tests.test_node import TestResult
