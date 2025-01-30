@@ -53,6 +53,7 @@ from clearpath_tests import (
     fan_test,
     light_test,
     rotation_test_fixed,
+    wifi_test,
 )
 from clearpath_tests.test_node import TestResult
 
@@ -69,6 +70,7 @@ class TestingNode(Node):
         self.platform = self.clearpath_config.get_platform_model()
 
         self.common_tests = [
+            wifi_test.WifiTestNode(),
             rotation_test_fixed.RotationTestNode(),
             drive_test_fixed.DriveTestNode(),
         ]
@@ -266,7 +268,7 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
         n = 1
         for node in tests_to_run:
             self.get_logger().info(f'Starting ({node.test_name}) (test {n} of {len(tests_to_run)})')
-            user_input = node.promptYN(f'Run {node.test_name}?')
+            user_input = node.promptYN(f'Run test {node.test_name}?')
             if user_input == 'N':
                 self.get_logger().info(f'User skipped test {node.test_name}')
                 with open(self.report_file, 'a') as report:

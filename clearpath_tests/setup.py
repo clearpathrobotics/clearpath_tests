@@ -34,6 +34,7 @@ setup(
             'light_test = clearpath_tests.light_test:main',
             'rotation_test_continuous = clearpath_tests.rotation_test_continuous:main',
             'rotation_test_fixed = clearpath_tests.rotation_test_fixed:main',
+            'wifi_test = clearpath_tests.wifi_test:main',
         ],
     },
 )
