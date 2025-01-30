@@ -296,6 +296,10 @@ class LightTestNode(TestNode):
         else:
             results.append(TestResult(True, 'Back right white', None))
 
+        # TODO: Ridgeback has 2 lights per corner (top and bottom)
+        # tests should be expanded to test those individually too
+        # But for now just checking each corner is sufficient
+
         return results
 
 
