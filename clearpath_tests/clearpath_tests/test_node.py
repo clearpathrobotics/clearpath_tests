@@ -112,7 +112,6 @@ class ConfigurableTransformListener(TransformListener):
             self.dedicated_listener_thread.start()
 
 
-
 class ClearpathTestResult:
     def __init__(self, success: bool, name: str, message: str):
         """
