@@ -27,13 +27,10 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from clearpath_config.clearpath_config import ClearpathConfig
 from clearpath_config.common.types.platform import Platform
 from clearpath_generator_common.common import BaseGenerator
 from clearpath_platform_msgs.msg import RGB, Lights
 from clearpath_tests.test_node import TestNode, TestResult
-
-import os
 
 import rclpy
 from rclpy.qos import qos_profile_system_default
@@ -310,6 +307,7 @@ def main():
     lt = LightTestNode(setup_path)
 
     try:
+        lt.start()
         rclpy.spin(lt)
     except KeyboardInterrupt:
         pass
