@@ -30,13 +30,13 @@
 from clearpath_config.common.types.platform import Platform
 from clearpath_generator_common.common import BaseGenerator
 from clearpath_platform_msgs.msg import RGB, Lights
-from clearpath_tests.test_node import TestNode, TestResult
+from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
 
 import rclpy
 from rclpy.qos import qos_profile_system_default
 
 
-class LightTestNode(TestNode):
+class LightTestNode(ClearpathTestNode):
 
     def __init__(self, light_zones=4, setup_path='/etc/clearpath'):
         super().__init__('Lights', 'light_test', setup_path)
@@ -215,9 +215,9 @@ class LightTestNode(TestNode):
         user_input = self.promptYN('Are all lights off?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
-            results.append(TestResult(False, 'All lights off', notes))
+            results.append(ClearpathTestResult(False, 'All lights off', notes))
         else:
-            results.append(TestResult(True, 'All lights off', None))
+            results.append(ClearpathTestResult(True, 'All lights off', None))
 
         # turn all lights red
         for i in range(self.light_zones):
@@ -228,9 +228,9 @@ class LightTestNode(TestNode):
         user_input = self.promptYN('Are all lights red?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
-            results.append(TestResult(False, 'All lights red', notes))
+            results.append(ClearpathTestResult(False, 'All lights red', notes))
         else:
-            results.append(TestResult(True, 'All lights red', None))
+            results.append(ClearpathTestResult(True, 'All lights red', None))
 
         # turn all lights green
         for i in range(self.light_zones):
@@ -241,9 +241,9 @@ class LightTestNode(TestNode):
         user_input = self.promptYN('Are all lights green?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
-            results.append(TestResult(False, 'All lights green', notes))
+            results.append(ClearpathTestResult(False, 'All lights green', notes))
         else:
-            results.append(TestResult(True, 'All lights green', None))
+            results.append(ClearpathTestResult(True, 'All lights green', None))
 
         # turn all lights blue
         for i in range(self.light_zones):
@@ -254,9 +254,9 @@ class LightTestNode(TestNode):
         user_input = self.promptYN('Are all lights blue?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
-            results.append(TestResult(False, 'All lights blue', notes))
+            results.append(ClearpathTestResult(False, 'All lights blue', notes))
         else:
-            results.append(TestResult(True, 'All lights blue', None))
+            results.append(ClearpathTestResult(True, 'All lights blue', None))
 
         # turn all lights white
         for i in range(self.light_zones):
@@ -267,9 +267,9 @@ class LightTestNode(TestNode):
         user_input = self.promptYN('Are all lights white?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
-            results.append(TestResult(False, 'All lights white', notes))
+            results.append(ClearpathTestResult(False, 'All lights white', notes))
         else:
-            results.append(TestResult(True, 'All lights white', None))
+            results.append(ClearpathTestResult(True, 'All lights white', None))
 
 
         # test each corner
@@ -286,9 +286,9 @@ class LightTestNode(TestNode):
         user_input = self.promptYN('Is the front-left light white and all other lights off?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
-            results.append(TestResult(False, 'Front left white', notes))
+            results.append(ClearpathTestResult(False, 'Front left white', notes))
         else:
-            results.append(TestResult(True, 'Front left white', None))
+            results.append(ClearpathTestResult(True, 'Front left white', None))
 
         for i in range(self.light_zones):
             if i in self.front_right:
@@ -303,9 +303,9 @@ class LightTestNode(TestNode):
         user_input = self.promptYN('Is the front-right light white and all other lights off?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
-            results.append(TestResult(False, 'Front right white', notes))
+            results.append(ClearpathTestResult(False, 'Front right white', notes))
         else:
-            results.append(TestResult(True, 'Front right white', None))
+            results.append(ClearpathTestResult(True, 'Front right white', None))
 
         for i in range(self.light_zones):
             if i in self.back_left:
@@ -320,9 +320,9 @@ class LightTestNode(TestNode):
         user_input = self.promptYN('Is the back-left light white and all other lights off?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
-            results.append(TestResult(False, 'Back left white', notes))
+            results.append(ClearpathTestResult(False, 'Back left white', notes))
         else:
-            results.append(TestResult(True, 'Back left white', None))
+            results.append(ClearpathTestResult(True, 'Back left white', None))
 
         for i in range(self.light_zones):
             if i in self.back_right:
@@ -337,9 +337,9 @@ class LightTestNode(TestNode):
         user_input = self.promptYN('Is the back-right light white and all other lights off?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
-            results.append(TestResult(False, 'Back right white', notes))
+            results.append(ClearpathTestResult(False, 'Back right white', notes))
         else:
-            results.append(TestResult(True, 'Back right white', None))
+            results.append(ClearpathTestResult(True, 'Back right white', None))
 
         # This test only applies to R100, since it's the only platform (currently)
         # with two rows of independently-controlled lights
@@ -358,9 +358,9 @@ class LightTestNode(TestNode):
             user_input = self.promptYN('Is the top row of lights white and bottom row off?')
             if user_input == 'N':
                 notes = input('Briefly describe the problem > ')
-                results.append(TestResult(False, 'Top row white', notes))
+                results.append(ClearpathTestResult(False, 'Top row white', notes))
             else:
-                results.append(TestResult(True, 'Top row white', None))
+                results.append(ClearpathTestResult(True, 'Top row white', None))
 
             for i in range(self.light_zones):
                 if i in self.bottom_row:
@@ -375,9 +375,9 @@ class LightTestNode(TestNode):
             user_input = self.promptYN('Is the bottom row of lights white and top row off?')
             if user_input == 'N':
                 notes = input('Briefly describe the problem > ')
-                results.append(TestResult(False, 'Bottom row white', notes))
+                results.append(ClearpathTestResult(False, 'Bottom row white', notes))
             else:
-                results.append(TestResult(True, 'Bottom row white', None))
+                results.append(ClearpathTestResult(True, 'Bottom row white', None))
 
         return results
 

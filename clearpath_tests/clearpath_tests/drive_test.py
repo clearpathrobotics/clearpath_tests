@@ -32,8 +32,8 @@ from clearpath_generator_common.common import BaseGenerator
 
 from clearpath_tests.test_node import (
     ConfigurableTransformListener,
-    TestNode,
-    TestResult
+    ClearpathTestNode,
+    ClearpathTestResult
 )
 
 from geometry_msgs.msg import PoseStamped, TwistStamped
@@ -50,7 +50,7 @@ from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 
 
-class DriveTestNode(TestNode):
+class DriveTestNode(ClearpathTestNode):
     """
     Uses odometry to drive a fixed distance forwards and then stop
 
@@ -148,7 +148,7 @@ class DriveTestNode(TestNode):
 The robot must be on the ground, all e-stops cleared, and a 2m safety clearance around the robot.
 Are all these conditions met?""")
         if user_response == 'N':
-            return [TestResult(False, test_name, 'User skipped')]
+            return [ClearpathTestResult(False, test_name, 'User skipped')]
 
         self.get_logger().info('Starting drive test')
         self.start()
@@ -160,9 +160,9 @@ Measure the robot's actual displacement.
 Is it between {self.goal_distance * 0.9:0.2f}m and {self.goal_distance * 1.1:0.2f}m?""")
         if user_response == 'N':
             measured_distance = input('How far did the robot actually drive (in meters)? ')
-            return [TestResult(False, test_name, f'Incorrect distance: {measured_distance}')]
+            return [ClearpathTestResult(False, test_name, f'Incorrect distance: {measured_distance}')]
         else:
-            return [TestResult(True, test_name, None)]
+            return [ClearpathTestResult(True, test_name, None)]
 
 def main():
     setup_path = BaseGenerator.get_args()

@@ -29,12 +29,12 @@
 
 from clearpath_generator_common.common import BaseGenerator
 from clearpath_platform_msgs.msg import Fans
-from clearpath_tests.test_node import TestNode, TestResult
+from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
 
 import rclpy
 from rclpy.qos import qos_profile_system_default
 
-class FanTestNode(TestNode):
+class FanTestNode(ClearpathTestNode):
 
     def __init__(self, n_fans=4, setup_path='/etc/clearpath'):
         super().__init__('Fans', 'fan_test', setup_path)
@@ -68,9 +68,9 @@ class FanTestNode(TestNode):
         self.publisher.publish(msg)
         user_input = self.promptYN('Are all fans stopped?')
         if user_input == 'Y':
-            results.append(TestResult(True, 'All fans off', None))
+            results.append(ClearpathTestResult(True, 'All fans off', None))
         else:
-            results.append(TestResult(False, 'All fans off', None))
+            results.append(ClearpathTestResult(False, 'All fans off', None))
 
         for i in range(self.n_fans):
             for j in range(self.n_fans):
@@ -80,9 +80,9 @@ class FanTestNode(TestNode):
 
             user_input = self.promptYN(f'Is ONLY fan {i+1} on?')
             if user_input == 'Y':
-                results.append(TestResult(True, f'Fan {i+1} only', None))
+                results.append(ClearpathTestResult(True, f'Fan {i+1} only', None))
             else:
-                results.append(TestResult(False, f'Fan {i+1} only', None))
+                results.append(ClearpathTestResult(False, f'Fan {i+1} only', None))
 
         for _ in range(self.n_fans):
             msg.fans[i] = 255
@@ -90,9 +90,9 @@ class FanTestNode(TestNode):
 
         user_input = self.promptYN('Are all fans running?')
         if user_input == 'Y':
-            results.append(TestResult(True, 'All fans on', None))
+            results.append(ClearpathTestResult(True, 'All fans on', None))
         else:
-            results.append(TestResult(False, 'All fans on', None))
+            results.append(ClearpathTestResult(False, 'All fans on', None))
 
         return results
 

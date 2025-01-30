@@ -27,11 +27,8 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from clearpath_config.clearpath_config import ClearpathConfig
-from clearpath_config.common.types.platform import Platform
 from clearpath_generator_common.common import BaseGenerator
-from clearpath_platform_msgs.msg import RGB, Lights
-from clearpath_tests.test_node import TestNode, TestResult
+from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
 
 import os
 import re
@@ -39,12 +36,11 @@ import subprocess
 import time
 
 import rclpy
-from rclpy.qos import qos_profile_system_default
 
 from wireless_msgs.msg import Connection
 
 
-class WifiTestNode(TestNode):
+class WifiTestNode(ClearpathTestNode):
 
     def __init__(self, setup_path='/etc/clearpath'):
         super().__init__('Wi-Fi', 'wifi_test', setup_path)
@@ -148,11 +144,11 @@ class WifiTestNode(TestNode):
                 bitrate += s.bitrate / n_samples
 
             if ssid is None:
-                results.append(TestResult(False, w, 'No ESSID. Wifi not configured?'))
+                results.append(ClearpathTestResult(False, w, 'No ESSID. Wifi not configured?'))
             elif bitrate < 10:  # slower than 10Mb/s
-                results.append(TestResult(False, w, f'Connected to {ssid}. Low bitrate {bitrate} Mb/s'))
+                results.append(ClearpathTestResult(False, w, f'Connected to {ssid}. Low bitrate {bitrate} Mb/s'))
             else:
-                results.append(TestResult(True, w, f'Connected to {ssid}. Bitrate {bitrate} Mb/s'))
+                results.append(ClearpathTestResult(True, w, f'Connected to {ssid}. Bitrate {bitrate} Mb/s'))
 
         return results
 

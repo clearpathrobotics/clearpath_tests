@@ -30,7 +30,7 @@
 from clearpath_config.clearpath_config import ClearpathConfig
 from clearpath_generator_common.common import BaseGenerator
 
-from clearpath_tests.test_node import TestNode, TestResult
+from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
 
 from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
@@ -45,7 +45,7 @@ from rclpy.qos import qos_profile_system_default, qos_profile_sensor_data
 from tf_transformations import euler_from_quaternion
 
 
-class RotationTestNode(TestNode):
+class RotationTestNode(ClearpathTestNode):
     """
     Uses odometry to rotate n complete rotations and then stops
 
@@ -140,7 +140,7 @@ class RotationTestNode(TestNode):
 The robot must be on the ground, all e-stops cleared, and a 2m safety clearance around the robot.
 Are all these conditions met?""")
         if user_response == 'N':
-            return [TestResult(False, test_name, 'User skipped')]
+            return [ClearpathTestResult(False, test_name, 'User skipped')]
 
         self.get_logger().info('Starting rotation test')
         self.start()
@@ -152,9 +152,9 @@ Measure the robot's actual alignment.
 Is it within 10 degrees of its original orientation?""")
         if user_response == 'N':
             measured_alignment = input("How many degrees off is the robot's alignment? ")
-            return [TestResult(False, test_name, f'Incorrect aligment: {measured_alignment}')]
+            return [ClearpathTestResult(False, test_name, f'Incorrect aligment: {measured_alignment}')]
         else:
-            return [TestResult(True, test_name, None)]
+            return [ClearpathTestResult(True, test_name, None)]
 
 def main():
     setup_path = BaseGenerator.get_args()

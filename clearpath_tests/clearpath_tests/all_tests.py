@@ -55,7 +55,7 @@ from clearpath_tests import (
     rotation_test,
     wifi_test,
 )
-from clearpath_tests.test_node import TestResult
+from clearpath_tests.test_node import ClearpathTestResult
 
 
 class TestingNode(Node):
@@ -240,7 +240,7 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
 
             report.write('```\n')
 
-    def log_result(self, test_result: TestResult):
+    def log_result(self, test_result: ClearpathTestResult):
         """
         Log the results of a test to the report
 
@@ -273,12 +273,12 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
                 self.get_logger().info(f'User skipped test {node.test_name}')
                 with open(self.report_file, 'a') as report:
                     report.write(f'### {node.test_name}\n\n')
-                self.log_result(TestResult(None, node.test_name, 'Skipped'))
+                self.log_result(ClearpathTestResult(None, node.test_name, 'Skipped'))
             else:
                 try:
                     results = node.run_test()
                 except Exception as err:
-                    results = [TestResult(False, node.test_name, str(err))]
+                    results = [ClearpathTestResult(False, node.test_name, str(err))]
 
                 with open(self.report_file, 'a') as report:
                     report.write(f'### {node.test_name}\n\n')

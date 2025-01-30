@@ -113,7 +113,7 @@ class ConfigurableTransformListener(TransformListener):
 
 
 
-class TestResult:
+class ClearpathTestResult:
     def __init__(self, success: bool, name: str, message: str):
         """
         Create a test result we can log
@@ -144,7 +144,7 @@ class TestResult:
             return f'{self.name}: {pass_fail}'
 
 
-class TestNode(Node):
+class ClearpathTestNode(Node):
     """
     Generic superclass for test nodes
 
