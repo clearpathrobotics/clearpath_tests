@@ -169,7 +169,7 @@ class LightTestNode(TestNode):
         self.publisher.publish(self.msg)
         user_input = self.promptYN('Are all lights off?')
         if user_input == 'N':
-            notes = input('Briefly describe the problem >')
+            notes = input('Briefly describe the problem > ')
             results.append(TestResult(False, 'All lights off', notes))
         else:
             results.append(TestResult(True, 'All lights off', None))
@@ -182,7 +182,7 @@ class LightTestNode(TestNode):
         self.publisher.publish(self.msg)
         user_input = self.promptYN('Are all lights red?')
         if user_input == 'N':
-            notes = input('Briefly describe the problem >')
+            notes = input('Briefly describe the problem > ')
             results.append(TestResult(False, 'All lights red', notes))
         else:
             results.append(TestResult(True, 'All lights red', None))
@@ -195,7 +195,7 @@ class LightTestNode(TestNode):
         self.publisher.publish(self.msg)
         user_input = self.promptYN('Are all lights green?')
         if user_input == 'N':
-            notes = input('Briefly describe the problem >')
+            notes = input('Briefly describe the problem > ')
             results.append(TestResult(False, 'All lights green', notes))
         else:
             results.append(TestResult(True, 'All lights green', None))
@@ -208,7 +208,7 @@ class LightTestNode(TestNode):
         self.publisher.publish(self.msg)
         user_input = self.promptYN('Are all lights blue?')
         if user_input == 'N':
-            notes = input('Briefly describe the problem >')
+            notes = input('Briefly describe the problem > ')
             results.append(TestResult(False, 'All lights blue', notes))
         else:
             results.append(TestResult(True, 'All lights blue', None))
@@ -221,7 +221,7 @@ class LightTestNode(TestNode):
         self.publisher.publish(self.msg)
         user_input = self.promptYN('Are all lights white?')
         if user_input == 'N':
-            notes = input('Briefly describe the problem >')
+            notes = input('Briefly describe the problem > ')
             results.append(TestResult(False, 'All lights white', notes))
         else:
             results.append(TestResult(True, 'All lights white', None))
@@ -240,7 +240,7 @@ class LightTestNode(TestNode):
         self.publisher.publish(self.msg)
         user_input = self.promptYN('Is the front-left light white and all other lights off?')
         if user_input == 'N':
-            notes = input('Briefly describe the problem >')
+            notes = input('Briefly describe the problem > ')
             results.append(TestResult(False, 'Front left white', notes))
         else:
             results.append(TestResult(True, 'Front left white', None))
@@ -257,7 +257,7 @@ class LightTestNode(TestNode):
         self.publisher.publish(self.msg)
         user_input = self.promptYN('Is the front-right light white and all other lights off?')
         if user_input == 'N':
-            notes = input('Briefly describe the problem >')
+            notes = input('Briefly describe the problem > ')
             results.append(TestResult(False, 'Front right white', notes))
         else:
             results.append(TestResult(True, 'Front right white', None))
@@ -274,7 +274,7 @@ class LightTestNode(TestNode):
         self.publisher.publish(self.msg)
         user_input = self.promptYN('Is the back-left light white and all other lights off?')
         if user_input == 'N':
-            notes = input('Briefly describe the problem >')
+            notes = input('Briefly describe the problem > ')
             results.append(TestResult(False, 'Back left white', notes))
         else:
             results.append(TestResult(True, 'Back left white', None))
@@ -291,7 +291,7 @@ class LightTestNode(TestNode):
         self.publisher.publish(self.msg)
         user_input = self.promptYN('Is the back-right light white and all other lights off?')
         if user_input == 'N':
-            notes = input('Briefly describe the problem >')
+            notes = input('Briefly describe the problem > ')
             results.append(TestResult(False, 'Back right white', notes))
         else:
             results.append(TestResult(True, 'Back right white', None))

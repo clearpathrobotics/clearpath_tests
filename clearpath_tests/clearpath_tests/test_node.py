@@ -131,10 +131,17 @@ class TestResult:
         self.name = name
 
     def __str__(self):
-        if self.message:
-            return f'{self.name}: {"pass" if self.success else "fail"} ({self.message})'
+        if self.success is None:
+            pass_fail = 'n/a'
+        elif self.success:
+            pass_fail = 'pass'
         else:
-            return f'{self.name}: {"pass" if self.success else "fail"}'
+            pass_fail = 'fail'
+
+        if self.message:
+            return f'{self.name}: {pass_fail} ({self.message})'
+        else:
+            return f'{self.name}: {pass_fail}'
 
 
 class TestNode(Node):
@@ -178,7 +185,7 @@ class TestNode(Node):
         """
         raise NotImplementedError()
 
-    def promptYN(self, message:str, default:str='Y'):
+    def promptYN(self, message: str, default: str = 'Y'):
         """
         Ask the user a yes/no question and return their response
 
@@ -189,7 +196,7 @@ class TestNode(Node):
         """
         if default:
             default = default.upper()
-        if default != "N" and default != "Y":
+        if default != 'N' and default != 'Y':
             raise ValueError(f'Invalid default: "{default}"')
 
         if default == 'Y':
@@ -201,9 +208,13 @@ class TestNode(Node):
 
         user_input = None
         while (
-            user_input is None or
-            len(user_input) > 1 or
-            (user_input != 'Y' and user_input != 'N' and user_input != '')
+            user_input is None or (
+                user_input != 'Y' and
+                user_input != 'YES' and
+                user_input != 'N' and
+                user_input != 'NO' and
+                user_input != ''
+            )
         ):
             user_input = input(prompt).strip().upper()
 

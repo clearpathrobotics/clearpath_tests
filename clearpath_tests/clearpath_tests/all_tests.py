@@ -144,11 +144,16 @@ class TestingNode(Node):
         n_passed = 0
         n_failed = 0
         for result in self.test_results:
-            table_md = table_md + f'| {result.name.ljust(test_column_width)} | {("Pass" if result.success else "Fail").ljust(result_column_width)} | {(result.message if result.message else "").ljust(message_column_width)} |\n'
-            if result.success:
+            if result.success is None:
+                pass_fail = 'n/a'
+            elif result.success:
+                pass_fail = 'pass'
                 n_passed += 1
             else:
+                pass_fail = 'fail'
                 n_failed += 1
+
+            table_md = table_md + f'| {result.name.ljust(test_column_width)} | {pass_fail.ljust(result_column_width)} | {(result.message if result.message else "").ljust(message_column_width)} |\n'
 
         with open(self.report_file, 'a') as report:
             report.write('\n## Summary\n')
@@ -260,17 +265,24 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
 
         n = 1
         for node in tests_to_run:
-            self.get_logger().info(f'Starting test {n} of {len(tests_to_run)}')
-            try:
-                results = node.run_test()
-            except Exception as err:
-                results = [TestResult(False, node.test_name, str(err))]
+            self.get_logger().info(f'Starting ({node.test_name}) (test {n} of {len(tests_to_run)})')
+            user_input = node.promptYN(f'Run {node.test_name}?')
+            if user_input == 'N':
+                self.get_logger().info(f'User skipped test {node.test_name}')
+                with open(self.report_file, 'a') as report:
+                    report.write(f'### {node.test_name}\n\n')
+                self.log_result(TestResult(None, node.test_name, 'Skipped'))
+            else:
+                try:
+                    results = node.run_test()
+                except Exception as err:
+                    results = [TestResult(False, node.test_name, str(err))]
 
-            with open(self.report_file, 'a') as report:
-                report.write(f'### {node.test_name}\n\n')
+                with open(self.report_file, 'a') as report:
+                    report.write(f'### {node.test_name}\n\n')
 
-            for result in results:
-                self.log_result(result)
+                for result in results:
+                    self.log_result(result)
 
             n += 1
 
