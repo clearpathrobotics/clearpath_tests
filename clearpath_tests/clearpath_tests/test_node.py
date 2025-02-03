@@ -176,6 +176,16 @@ class ClearpathTestNode(Node):
         """
         raise NotImplementedError()
 
+    def get_test_result_details(self) -> str:
+        """
+        Get additional details about the test results.
+
+        These details get included in the report, but are not printed out.
+
+        If the test does not support additional details, simply return None
+        """
+        return None
+
     def start(self):
         """
         Run this node normally as a standard ROS node without any user interaction
