@@ -145,7 +145,7 @@ class WifiTestNode(ClearpathTestNode):
             bitrate = 0.0
             ssid = None
             for s in samples[w]:
-                if ssid is None and s.essid:
+                if ssid is None and s.essid and s.essid != 'off/any':
                     ssid = s.essid
                 bitrate += s.bitrate / n_samples
 
