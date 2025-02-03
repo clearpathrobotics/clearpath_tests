@@ -58,6 +58,7 @@ class DiagnosticTestNode(ClearpathTestNode):
         self.test_in_progress = False
         self.warnings = {}
         self.errors = {}
+        self.allowed_errors = {}
 
     def log_error(self, status, pool):
         key = f'{status.name}/{status.message}'
@@ -73,6 +74,8 @@ class DiagnosticTestNode(ClearpathTestNode):
                 pool[key] = status
                 if not self.test_in_progress:
                     self.get_logger().warning(f'Diagnostics: {status.name} ({status.level}): {status.message}')
+            else:
+                self.allowed_errors[key] = status
 
     def diagnostic_callback(self, diagnostic_array):
         """
@@ -112,12 +115,14 @@ class DiagnosticTestNode(ClearpathTestNode):
         while self.get_clock().now() < end_time:
             rclpy.spin_once(self)
 
-        if len(self.warnings) == 0 and len(self.errors) == 0:
+        if len(self.warnings) == 0 and len(self.errors) == 0 and len(self.allowed_errors) == 0:
             results.append(ClearpathTestResult(True, 'Diagnostics', 'No errors, no warnings'))
+        elif len(self.warnings) == 0 and len(self.errors) == 0:
+            results.append(ClearpathTestResult(True, 'Diagnostics', f'{len(self.allowed_errors)} allowed errors/warnings'))
         elif len(self.errors) == 0:
-            results.append(ClearpathTestResult(True, 'Diagnostics', f'No errors, {len(self.warnings)} warnings'))
+            results.append(ClearpathTestResult(False, 'Diagnostics', f'No errors, {len(self.warnings)} warnings, {len(self.allowed_errors)} allowed errors/warnings'))
         else:
-            results.append(ClearpathTestResult(False, 'Diagnostics', f'{len(self.errors)} errors, {len(self.warnings)} warnings'))
+            results.append(ClearpathTestResult(False, 'Diagnostics', f'{len(self.errors)} errors, {len(self.warnings)} warnings, {len(self.allowed_errors)} allowed errors/warnings'))
 
         return results
 
@@ -135,6 +140,13 @@ class DiagnosticTestNode(ClearpathTestNode):
                 details = ''
             details += '\n#### Warnings recorded\n\n'
             for warn in self.warnings.values():
+                details += f'* {warn.name}: {warn.message}\n'
+
+        if len(self.allowed_errors) > 0:
+            if details is None:
+                details = ''
+            details += '\n#### Ignored/allowed warnings & errors\n\n'
+            for warn in self.allowed_errors.values():
                 details += f'* {warn.name}: {warn.message}\n'
 
         return details
