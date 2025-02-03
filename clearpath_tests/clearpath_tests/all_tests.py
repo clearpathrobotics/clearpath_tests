@@ -49,6 +49,7 @@ from clearpath_config.common.types.platform import Platform
 from clearpath_config.common.utils.yaml import read_yaml
 
 from clearpath_tests import (
+    diagnostic_test,
     drive_test,
     fan_test,
     light_test,
@@ -70,6 +71,7 @@ class TestingNode(Node):
         self.platform = self.clearpath_config.get_platform_model()
 
         self.common_tests = [
+            diagnostic_test.DiagnosticTestNode(),
             wifi_test.WifiTestNode(),
             rotation_test.RotationTestNode(),
             drive_test.DriveTestNode(),
@@ -269,6 +271,8 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
         for node in tests_to_run:
             self.get_logger().info(f'Starting ({node.test_name}) (test {n} of {len(tests_to_run)})')
             user_input = node.promptYN(f'Run test {node.test_name}?')
+            details = None
+            results = []
             if user_input == 'N':
                 self.get_logger().info(f'User skipped test {node.test_name}')
                 with open(self.report_file, 'a') as report:
@@ -277,7 +281,9 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
             else:
                 try:
                     results = node.run_test()
+                    details = node.get_test_result_details()
                 except Exception as err:
+                    details = None
                     results = [ClearpathTestResult(False, node.test_name, str(err))]
 
                 with open(self.report_file, 'a') as report:
@@ -285,6 +291,11 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
 
                 for result in results:
                     self.log_result(result)
+
+                if details is not None:
+                    with open(self.report_file, 'a') as report:
+                        report.write(details)
+                        report.write('\n')
 
             n += 1
 
