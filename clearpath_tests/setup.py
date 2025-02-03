@@ -55,6 +55,7 @@ setup(
     entry_points={
         'console_scripts': [
             'all_tests = clearpath_tests.all_tests:main',
+            'diagnostic_test = clearpath_tests.diagnostic_test:main',
             'drive_test = clearpath_tests.drive_test:main',
             'fan_test = clearpath_tests.fan_test:main',
             'light_test = clearpath_tests.light_test:main',
