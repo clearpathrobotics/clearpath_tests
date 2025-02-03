@@ -97,7 +97,13 @@ class WifiTestNode(ClearpathTestNode):
                     elif key == 'Tx-Power':
                         c.txpower = int(re.split(all_whitespace, value)[0])
                     elif key == 'Bit Rate':
-                        c.bitrate = float(re.split(all_whitespace, value)[0])
+                        unit = re.split(all_whitespace, value)[-1]
+                        multiplier = 1.0
+                        if 'Gb/s' in unit:
+                            multiplier = 1000.0
+                        elif 'kb/s' in unit:
+                            multiplier = 0.0001
+                        c.bitrate = float(re.split(all_whitespace, value)[0]) * multiplier
                     elif key == 'Link Quality':
                         c.link_quality_raw = value
                         c.link_quality = (
