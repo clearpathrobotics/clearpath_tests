@@ -37,6 +37,17 @@ import rclpy
 from rclpy.time import Duration
 from rclpy.qos import qos_profile_system_default
 
+import re
+
+
+# Allowed warnings & errors that we can silently drop
+# Key is status.name, value is an array of regexes
+allowed_errors = {
+    'joy_node: Joystick Driver Status': [
+        re.compile(r'.*Joystick not open.*')
+    ]
+}
+
 
 class DiagnosticTestNode(ClearpathTestNode):
     """
@@ -48,6 +59,21 @@ class DiagnosticTestNode(ClearpathTestNode):
         self.warnings = {}
         self.errors = {}
 
+    def log_error(self, status, pool):
+        key = f'{status.name}/{status.message}'
+
+        if key not in pool.keys():
+            allowed = False
+            patterns = allowed_errors.get(status.name, [])
+            for p in patterns:
+                if re.match(p, status.message):
+                    allowed = True
+
+            if not allowed:
+                pool[key] = status
+                if not self.test_in_progress:
+                    self.get_logger().warning(f'Diagnostics: {status.name} ({status.level}): {status.message}')
+
     def diagnostic_callback(self, diagnostic_array):
         """
         Check the statuses in the array for warnings & errors.
@@ -55,24 +81,12 @@ class DiagnosticTestNode(ClearpathTestNode):
         @param diagnostic_array  The message received on the diagnostic topic
         """
         for status in diagnostic_array.status:
-            key = f'{status.name}/{status.message}'
-
             if status.level == DiagnosticStatus.OK:
                 pass
             elif status.level == DiagnosticStatus.WARN:
-                if key not in self.warnings:
-                    self.warnings[key] = status
-                    if not self.test_in_progress:
-                        self.get_logger().info(
-                            f'Diagnostic warning: {status.name} {status.message}'
-                        )
+                self.log_error(status, self.warnings)
             elif status.level == DiagnosticStatus.ERROR:
-                if key not in self.errors:
-                    self.errors[key] = status
-                    if not self.test_in_progress:
-                        self.get_logger().info(
-                            f'Diagnostic error: {status.name} {status.message}'
-                        )
+                self.log_error(status, self.errors)
             elif status.level == DiagnosticStatus.STALE:
                 pass
 
