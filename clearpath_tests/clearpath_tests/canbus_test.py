@@ -61,7 +61,7 @@ class CanbusTestNode(ClearpathTestNode):
             self.can_interface = 'vcan0'
 
         if self.n_devices <= 0:
-            self.get_logger().warning('No CAN devices specified')
+            self.get_logger().warning('Permssive number of devices; any number of IDs will be accepted')
             self.n_devices = 0
 
         if self.msg_length <= 0:
@@ -144,7 +144,12 @@ class CanbusTestNode(ClearpathTestNode):
                 ):
                     can_ids.add(id)
 
-            if len(can_ids) == self.n_devices:
+            self.detected_ids = can_ids
+
+            if (
+                len(can_ids) == self.n_devices or
+                self.n_devices <= 0
+            ):
                 return ClearpathTestResult(
                     True,
                     f'CAN {self.can_interface}',
@@ -157,6 +162,11 @@ class CanbusTestNode(ClearpathTestNode):
                     f'{len(can_ids)} detected on network; expected {self.n_devices}'
                 )
 
+    def get_test_result_details(self):
+        details = ''
+        details += '\n#### Detected CAN device IDs\n\n'
+        for id in self.detected_ids:
+            details += f'* {id}\n'
 
 
 def main():

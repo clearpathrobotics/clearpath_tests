@@ -78,15 +78,20 @@ class TestingNode(Node):
             drive_test.DriveTestNode(),
         ]
 
+        # Add any platform-specific tests here
         self.tests_for_platform = []
-
         if self.platform == Platform.A200:
             pass
         elif self.platform == Platform.A300:
             self.tests_for_platform.append(fan_test.FanTestNode(4))
             self.tests_for_platform.append(light_test.LightTestNode(4))
-            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 0, 0))
-            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan1', 4, 8))
+
+            # vcan0 has the 4 motor drivers
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 4))
+
+            # vcan1 has batteries, optional e-stop, optional wireless charger
+            # so just allow anything here
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan1', 0, 0))
         elif(
             self.platform == Platform.DD100 or
             self.platform == Platform.DD150
@@ -105,8 +110,10 @@ class TestingNode(Node):
             pass
         elif self.platform == Platform.R100:
             self.tests_for_platform.append(light_test.LightTestNode(8))
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 4))
         elif self.platform == Platform.W200:
             self.tests_for_platform.append(light_test.LightTestNode(4))
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('can0', 4, 0))
 
         if os.environ['HOME']:
             default_log_dir = os.environ['HOME']
