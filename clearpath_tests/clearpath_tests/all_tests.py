@@ -49,6 +49,7 @@ from clearpath_config.common.types.platform import Platform
 from clearpath_config.common.utils.yaml import read_yaml
 
 from clearpath_tests import (
+    canbus_test,
     diagnostic_test,
     drive_test,
     fan_test,
@@ -84,13 +85,20 @@ class TestingNode(Node):
         elif self.platform == Platform.A300:
             self.tests_for_platform.append(fan_test.FanTestNode(4))
             self.tests_for_platform.append(light_test.LightTestNode(4))
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 0, 0))
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan1', 4, 8))
         elif(
             self.platform == Platform.DD100 or
-            self.platform == Platform.DD150 or
+            self.platform == Platform.DD150
+        ):
+            self.tests_for_platform.append(light_test.LightTestNode(4))
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 4))
+        elif (
             self.platform == Platform.DO100 or
             self.platform == Platform.DO150
         ):
             self.tests_for_platform.append(light_test.LightTestNode(4))
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 2, 4))
         elif self.platform == Platform.GENERIC:
             pass
         elif self.platform == Platform.J100:

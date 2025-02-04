@@ -7,9 +7,11 @@
   <maintainer email="tbaltovski@clearpathrobotics.com">Tony Baltovski</maintainer>
   <license>BSD</license>
 
+  <exec_depend>can-utils</exec_depend>
   <exec_depend>clearpath_config</exec_depend>
   <exec_depend>clearpath_generator_common</exec_depend>
   <exec_depend>clearpath_platform_msgs</exec_depend>
+  <exec_depend>diagnostic_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>rclpy</exec_depend>
