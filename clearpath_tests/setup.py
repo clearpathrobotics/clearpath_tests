@@ -58,6 +58,7 @@ setup(
             'canbus_test = clearpath_tests.canbus_test:main',
             'diagnostic_test = clearpath_tests.diagnostic_test:main',
             'drive_test = clearpath_tests.drive_test:main',
+            'estop_test = clearpath_tests.estop_test:main',
             'fan_test = clearpath_tests.fan_test:main',
             'light_test = clearpath_tests.light_test:main',
             'rotation_test = clearpath_tests.rotation_test:main',

@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+# Software License Agreement (BSD)
+#
+# @author    Chris Iverach-Brereton <civerachb@clearpathrobotics.com>
+# @copyright (c) 2025, Clearpath Robotics, Inc., All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# * Redistributions of source code must retain the above copyright notice,
+#   this list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+# * Neither the name of Clearpath Robotics nor the names of its contributors
+#   may be used to endorse or promote products derived from this software
+#   without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+from clearpath_generator_common.common import BaseGenerator
+from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
+
+import rclpy
+from rclpy.duration import Duration
+from rclpy.qos import qos_profile_sensor_data
+
+from std_msgs.msg import Bool
+
+
+class EstopTestNode(ClearpathTestNode):
+    """Ensures e-stop works correctly"""
+
+    def __init__(self, estop_location, setup_path='/etc/clearpath'):
+        super().__init__(f'E-Stop ({estop_location})', 'estop_test', setup_path)
+        self.estop_engaged = None
+        self.test_in_progress = False
+        self.estop_location = estop_location
+
+    def estop_callback(self, msg: Bool):
+        self.estop_engaged = msg.data
+
+        if not self.test_in_progress:
+            if self.estop_engaged is None:
+                state = 'unknown'
+            elif self.estop_engaged:
+                state = 'stopped'
+            else:
+                state = 'clear'
+            self.get_logger().info(f'E-Stop state: {state}')
+
+    def start(self):
+        self.estop_sub = self.create_subscription(
+            Bool,
+            f'/{self.namespace}/platform/emergency_stop',
+            self.estop_callback,
+            qos_profile_sensor_data
+        )
+
+    def run_test(self):
+        self.test_in_progress = True
+        results = []
+
+        # wait until we know the state of the e-stop
+        start_time = self.get_clock().now()
+        now = self.get_clock().now()
+        timeout = Duration(seconds = 10)
+        print('Getting e-stop status...')
+        while (
+            self.estop_engaged is None and
+            (now - start_time) < timeout
+        ):
+            now = self.get_clock().now()
+
+        if self.estop_engaged is None:
+            return [
+                ClearpathTestResult(False, self.test_name, 'Timed out waiting for e-stop state')
+            ]
+
+        if self.estop_engaged:
+            print('Emergency stop engaged. Disengage e-stops now')
+            if not self.wait_for_estop(False, 60):
+                return [
+                    ClearpathTestResult(False, self.test_name, 'Timed out waiting for user to clear e-stops')
+                ]
+
+        print(f'Engage the {self.estop_location} emergency stop now.')
+        if not self.wait_for_estop(True, 30):
+            results.append(ClearpathTestNode(False, self.test_name, 'E-stop failed to engage'))
+        else:
+            results.append(ClearpathTestNode(True, self.test_name, 'E-stop engaged'))
+
+        print(f'Clear the {self.estop_location} emergency stop now.')
+        if not self.wait_for_estop(False, 30):
+            results.append(ClearpathTestNode(False, self.test_name, 'E-stop failed to clear'))
+        else:
+            results.append(ClearpathTestNode(True, self.test_name, 'E-stop cleared'))
+
+        return results
+
+    def wait_for_estop(self, state, timeout_seconds=10):
+        """
+        Wait for the e-stop state to enter the specified state
+
+        @param state  The desired state of the e-stop
+        @param timeout_seconds  The maximum number of seconds to wait
+
+        @return  True if the e-stop state is in the desired state, otherwise False
+        """
+        start_time = self.get_clock().now()
+        now = self.get_clock().now()
+        timeout = Duration(seconds = timeout_seconds)
+        while (
+            self.estop_engaged != state and
+            (now - start_time) < timeout
+        ):
+            now = self.get_clock().now()
+
+        return self.estop_engaged == state
+
+
+def main():
+    setup_path = BaseGenerator.get_args()
+    rclpy.init()
+
+    st = EstopTestNode('', setup_path=setup_path)
+
+    try:
+        st.start()
+        rclpy.spin(st)
+    except KeyboardInterrupt:
+        pass
+
+    st.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()

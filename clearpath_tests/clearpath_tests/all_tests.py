@@ -52,6 +52,7 @@ from clearpath_tests import (
     canbus_test,
     diagnostic_test,
     drive_test,
+    estop_test,
     fan_test,
     light_test,
     rotation_test,
@@ -72,48 +73,61 @@ class TestingNode(Node):
         self.platform = self.clearpath_config.get_platform_model()
 
         self.common_tests = [
-            diagnostic_test.DiagnosticTestNode(),
-            wifi_test.WifiTestNode(),
-            rotation_test.RotationTestNode(),
-            drive_test.DriveTestNode(),
+            diagnostic_test.DiagnosticTestNode(self.setup_path),
+            wifi_test.WifiTestNode(self.setup_path),
+            rotation_test.RotationTestNode(self.setup_path),
+            drive_test.DriveTestNode(self.setup_path),
         ]
 
         # Add any platform-specific tests here
         self.tests_for_platform = []
         if self.platform == Platform.A200:
-            pass
+            self.tests_for_platform.append(estop_test.EstopTestNode('Rear', self.setup_path))
         elif self.platform == Platform.A300:
-            self.tests_for_platform.append(fan_test.FanTestNode(4))
-            self.tests_for_platform.append(light_test.LightTestNode(4))
+            self.tests_for_platform.append(fan_test.FanTestNode(4, self.setup_path))
+            self.tests_for_platform.append(light_test.LightTestNode(4, self.setup_path))
+
+            self.tests_for_platform.append(estop_test.EstopTestNode('Front', self.setup_path))
+            self.tests_for_platform.append(estop_test.EstopTestNode('Rear', self.setup_path))
 
             # vcan0 has the 4 motor drivers
-            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 4))
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 4, self.setup_path))
 
             # vcan1 has batteries, optional e-stop, optional wireless charger
             # so just allow anything here
-            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan1', 0, 0))
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan1', 0, 0, self.setup_path))
         elif(
             self.platform == Platform.DD100 or
             self.platform == Platform.DD150
         ):
-            self.tests_for_platform.append(light_test.LightTestNode(4))
-            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 4))
+            self.tests_for_platform.append(light_test.LightTestNode(4, self.setup_path))
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 4, self.setup_path))
         elif (
             self.platform == Platform.DO100 or
             self.platform == Platform.DO150
         ):
-            self.tests_for_platform.append(light_test.LightTestNode(4))
-            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 2, 4))
+            self.tests_for_platform.append(light_test.LightTestNode(4, self.setup_path))
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 2, 4, self.setup_path))
         elif self.platform == Platform.GENERIC:
             pass
         elif self.platform == Platform.J100:
             pass
         elif self.platform == Platform.R100:
             self.tests_for_platform.append(light_test.LightTestNode(8))
-            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 4))
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 4, self.setup_path))
+
+            self.tests_for_platform.append(estop_test.EstopTestNode('Front Left', self.setup_path))
+            self.tests_for_platform.append(estop_test.EstopTestNode('Front Right', self.setup_path))
+            self.tests_for_platform.append(estop_test.EstopTestNode('Rear Left', self.setup_path))
+            self.tests_for_platform.append(estop_test.EstopTestNode('Rear Right', self.setup_path))
         elif self.platform == Platform.W200:
             self.tests_for_platform.append(light_test.LightTestNode(4))
-            self.tests_for_platform.append(canbus_test.CanbusTestNode('can0', 4, 0))
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('can0', 4, 0, self.setup_path))
+
+            self.tests_for_platform.append(estop_test.EstopTestNode('Front Left', self.setup_path))
+            self.tests_for_platform.append(estop_test.EstopTestNode('Front Right', self.setup_path))
+            self.tests_for_platform.append(estop_test.EstopTestNode('Rear Left', self.setup_path))
+            self.tests_for_platform.append(estop_test.EstopTestNode('Rear Right', self.setup_path))
 
         if os.environ['HOME']:
             default_log_dir = os.environ['HOME']
