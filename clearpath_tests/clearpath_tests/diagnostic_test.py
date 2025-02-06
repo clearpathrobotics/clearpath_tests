@@ -53,7 +53,7 @@ class DiagnosticTestNode(ClearpathTestNode):
     """
     Monitors diagnostic topics to make sure there aren't any warnings
     """
-    def __init__(self, light_zones=4, setup_path='/etc/clearpath'):
+    def __init__(self, setup_path='/etc/clearpath'):
         super().__init__('Diagnostics', 'diagnostic_test', setup_path)
         self.test_in_progress = False
         self.warnings = {}
