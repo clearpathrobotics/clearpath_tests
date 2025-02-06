@@ -75,6 +75,9 @@ class TestingNode(Node):
         self.common_tests = [
             diagnostic_test.DiagnosticTestNode(self.setup_path),
             wifi_test.WifiTestNode(self.setup_path),
+        ]
+
+        self.driving_tests = [
             rotation_test.RotationTestNode(self.setup_path),
             drive_test.DriveTestNode(self.setup_path),
         ]
@@ -291,9 +294,11 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
         self.write_header()
 
         tests_to_run = []
+        for test in self.common_tests:
+            tests_to_run.append(test)
         for test in self.tests_for_platform:
             tests_to_run.append(test)
-        for test in self.common_tests:
+        for test in self.driving_tests:
             tests_to_run.append(test)
 
         n = 1
