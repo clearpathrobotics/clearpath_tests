@@ -32,8 +32,9 @@ from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
 
 import rclpy
 from rclpy.duration import Duration
-from rclpy.qos import qos_profile_sensor_data
+from rclpy.qos import qos_profile_sensor_data, qos_profile_system_default
 
+from geometry_msgs.msg import TwistStamped
 from std_msgs.msg import Bool
 
 
@@ -68,18 +69,31 @@ class EstopTestNode(ClearpathTestNode):
 
     def run_test(self):
         self.test_in_progress = True
+        self.start()
+
         results = []
+
+        user_input = self.promptYN(
+            'Ensure the robot is on blocks and the wheels are not on the ground\nSafe to continue?'
+        )
+        if user_input == 'N':
+            return [
+                ClearpathTestResult(
+                    False,
+                    self.test_name,
+                    'User aborted; unsafe setup'
+                )
+            ]
 
         # wait until we know the state of the e-stop
         start_time = self.get_clock().now()
-        now = self.get_clock().now()
         timeout = Duration(seconds = 10)
         print('Getting e-stop status...')
         while (
             self.estop_engaged is None and
-            (now - start_time) < timeout
+            (self.get_clock().now() - start_time) < timeout
         ):
-            now = self.get_clock().now()
+            rclpy.spin_once(self)
 
         if self.estop_engaged is None:
             return [
@@ -99,13 +113,67 @@ class EstopTestNode(ClearpathTestNode):
         else:
             results.append(ClearpathTestNode(True, self.test_name, 'E-stop engaged'))
 
+        user_input = self.promptYN('Will now command the wheels to turn\nIs the robot on blocks?')
+        if user_input == 'N':
+            safe_to_drive = False
+            results.append(None, f'{self.test_name} (wheel rotation)', 'User skipped; unsafe setup')
+        else:
+            safe_to_drive = True
+            self.command_wheels()
+            user_input = self.promptYN('Did the wheels rotate?')
+            if user_input == 'Y':
+                results.append(ClearpathTestResult(
+                    False,
+                    f'{self.test_name} (wheel rotation a)',
+                    'Wheels turned while e-stop engaged'
+                ))
+            else:
+                results.append(ClearpathTestResult(
+                    True,
+                    f'{self.test_name} (wheel rotation a)',
+                    'Wheels did not turn while e-stop engaged'
+                ))
+
         print(f'Clear the {self.estop_location} emergency stop now.')
         if not self.wait_for_estop(False, 30):
             results.append(ClearpathTestNode(False, self.test_name, 'E-stop failed to clear'))
         else:
             results.append(ClearpathTestNode(True, self.test_name, 'E-stop cleared'))
 
+        if safe_to_drive:
+            self.command_wheels()
+            user_input = self.promptYN('Did the wheels rotate?')
+            if user_input == 'N':
+                results.append(ClearpathTestResult(
+                    False,
+                    f'{self.test_name} (wheel rotation b)',
+                    'Wheels did not turn while e-stop clear'
+                ))
+            else:
+                results.append(ClearpathTestResult(
+                    True,
+                    f'{self.test_name} (wheel rotation b)',
+                    'Wheels turned while e-stop clear'
+                ))
+
         return results
+
+    def command_wheels(self):
+        cmd_vel_pub = self.create_publisher(
+            TwistStamped,
+            f'/{self.namespace}/cmd_vel',
+            qos_profile_system_default
+        )
+        msg = TwistStamped()
+        start_time = self.get_clock().now()
+        duration = Duration(seconds=2)
+        while (self.get_clock().now() - start_time) < duration:
+            msg.header.stamp = self.get_clock().now()
+            msg.twist.linear.x = 0.5
+            cmd_vel_pub.publish(msg)
+        msg.header.stamp = self.get_clock().now()
+        msg.twist.linear.x = 0.0
+        cmd_vel_pub.publish(msg)
 
     def wait_for_estop(self, state, timeout_seconds=10):
         """
