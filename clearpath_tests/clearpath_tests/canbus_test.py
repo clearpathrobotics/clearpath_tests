@@ -40,12 +40,12 @@ class CanbusTestNode(ClearpathTestNode):
     """Check the output of candump and count the number if IDs"""
 
     def __init__(
-            self,
-            can_interface='',
-            n_devices=0,
-            expected_msg_length=0,
-            setup_path='/etc/clearpath'
-        ):
+        self,
+        can_interface='',
+        n_devices=0,
+        expected_msg_length=0,
+        setup_path='/etc/clearpath'
+    ):
         super().__init__(
             'CAN',
             'canbus_test',
