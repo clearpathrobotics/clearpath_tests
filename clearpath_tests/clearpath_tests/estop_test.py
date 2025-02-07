@@ -42,7 +42,11 @@ class EstopTestNode(ClearpathTestNode):
     """Ensures e-stop works correctly"""
 
     def __init__(self, estop_location, setup_path='/etc/clearpath'):
-        super().__init__(f'E-Stop ({estop_location})', 'estop_test', setup_path)
+        super().__init__(
+            f'E-Stop ({estop_location})',
+            f'estop_test_{estop_location.strip().lower()}',
+            setup_path
+        )
         self.estop_engaged = None
         self.test_in_progress = False
         self.estop_location = estop_location
