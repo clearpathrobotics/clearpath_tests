@@ -55,6 +55,7 @@ from clearpath_tests import (
     estop_test,
     fan_test,
     light_test,
+    mcu_test,
     rotation_test,
     wifi_test,
 )
@@ -73,6 +74,7 @@ class TestingNode(Node):
         self.platform = self.clearpath_config.get_platform_model()
 
         self.common_tests = [
+            mcu_test.McuTestNode(setup_path=self.setup_path),
             diagnostic_test.DiagnosticTestNode(self.setup_path),
             wifi_test.WifiTestNode(self.setup_path),
         ]

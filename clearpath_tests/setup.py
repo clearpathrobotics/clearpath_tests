@@ -61,6 +61,7 @@ setup(
             'estop_test = clearpath_tests.estop_test:main',
             'fan_test = clearpath_tests.fan_test:main',
             'light_test = clearpath_tests.light_test:main',
+            'mcu_test = clearpath_tests.mcu_test:main',
             'rotation_test = clearpath_tests.rotation_test:main',
             'wifi_test = clearpath_tests.wifi_test:main',
         ],
