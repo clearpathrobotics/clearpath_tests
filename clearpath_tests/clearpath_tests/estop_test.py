@@ -77,6 +77,14 @@ class EstopTestNode(ClearpathTestNode):
         self.test_in_progress = True
         self.start()
 
+        self.cmd_vel_pub = self.create_publisher(
+            TwistStamped,
+            f'/{self.namespace}/cmd_vel',
+            qos_profile_system_default
+        )
+        self.cmd_vel = TwistStamped()
+        self.cmd_vel_timer = self.create_timer(0.1, self.cmd_vel_timer_callback) # 10Hz
+
         self.results = []
         self.test_done = False
         ui_thread = threading.Thread(target=self.run_ui)
@@ -85,6 +93,10 @@ class EstopTestNode(ClearpathTestNode):
             rclpy.spin_once(self)
         ui_thread.join()
         return self.results
+
+    def cmd_vel_timer_callback(self):
+        self.cmd_vel.header.stamp = self.get_clock().now().to_msg()
+        self.cmd_vel_pub.publish(self.cmd_vel)
 
     def run_ui(self):
         results = self.results
@@ -183,21 +195,14 @@ class EstopTestNode(ClearpathTestNode):
         self.test_done = True
 
     def command_wheels(self):
-        cmd_vel_pub = self.create_publisher(
-            TwistStamped,
-            f'/{self.namespace}/cmd_vel',
-            qos_profile_system_default
-        )
-        msg = TwistStamped()
+        self.cmd_vel.twist.linear.x = 0.1
+
         start_time = self.get_clock().now()
         duration = Duration(seconds=2)
         while (self.get_clock().now() - start_time) < duration:
-            msg.header.stamp = self.get_clock().now()
-            msg.twist.linear.x = 0.5
-            cmd_vel_pub.publish(msg)
-        msg.header.stamp = self.get_clock().now()
-        msg.twist.linear.x = 0.0
-        cmd_vel_pub.publish(msg)
+            pass
+
+        self.cmd_vel.twist.linear.x = 0.0
 
     def wait_for_estop(self, state, timeout_seconds=10):
         """
