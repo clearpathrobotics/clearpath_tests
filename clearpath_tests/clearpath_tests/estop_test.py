@@ -37,6 +37,8 @@ from rclpy.qos import qos_profile_sensor_data, qos_profile_system_default
 from geometry_msgs.msg import TwistStamped
 from std_msgs.msg import Bool
 
+import threading
+
 
 class EstopTestNode(ClearpathTestNode):
     """Ensures e-stop works correctly"""
@@ -44,7 +46,7 @@ class EstopTestNode(ClearpathTestNode):
     def __init__(self, estop_location, setup_path='/etc/clearpath'):
         super().__init__(
             f'E-Stop ({estop_location})',
-            f'estop_test_{estop_location.strip().lower()}',
+            f'estop_test_{estop_location.strip().lower().replace(' ', '_').replace('-', '_')}',
             setup_path
         )
         self.estop_engaged = None
@@ -75,19 +77,29 @@ class EstopTestNode(ClearpathTestNode):
         self.test_in_progress = True
         self.start()
 
-        results = []
+        self.results = []
+        self.test_done = False
+        ui_thread = threading.Thread(target=self.run_ui)
+        ui_thread.start()
+        while not self.test_done:
+            rclpy.spin_once(self)
+        ui_thread.join()
+        return self.results
+
+    def run_ui(self):
+        results = self.results
 
         user_input = self.promptYN(
             'Ensure the robot is on blocks and the wheels are not on the ground\nSafe to continue?'
         )
         if user_input == 'N':
-            return [
-                ClearpathTestResult(
-                    False,
-                    self.test_name,
-                    'User aborted; unsafe setup'
-                )
-            ]
+            results.append(ClearpathTestResult(
+                False,
+                self.test_name,
+                'User aborted; unsafe setup'
+            ))
+            self.test_done = True
+            return
 
         # wait until we know the state of the e-stop
         start_time = self.get_clock().now()
@@ -100,16 +112,24 @@ class EstopTestNode(ClearpathTestNode):
             rclpy.spin_once(self)
 
         if self.estop_engaged is None:
-            return [
-                ClearpathTestResult(False, self.test_name, 'Timed out waiting for e-stop state')
-            ]
+            results.append(ClearpathTestResult(
+                False,
+                self.test_name,
+                'Timed out waiting for e-stop state'
+            ))
+            self.test_done = True
+            return
 
         if self.estop_engaged:
             print('Emergency stop engaged. Disengage e-stops now')
             if not self.wait_for_estop(False, 60):
-                return [
-                    ClearpathTestResult(False, self.test_name, 'Timed out waiting for user to clear e-stops')
-                ]
+                results.append(ClearpathTestResult(
+                    False,
+                    self.test_name,
+                    'Timed out waiting for user to clear e-stops'
+                ))
+                self.test_done = True
+                return
 
         print(f'Engage the {self.estop_location} emergency stop now.')
         if not self.wait_for_estop(True, 30):
@@ -160,7 +180,7 @@ class EstopTestNode(ClearpathTestNode):
                     'Wheels turned while e-stop clear'
                 ))
 
-        return results
+        self.test_done = True
 
     def command_wheels(self):
         cmd_vel_pub = self.create_publisher(
