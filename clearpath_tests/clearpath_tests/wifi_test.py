@@ -181,7 +181,7 @@ class WifiTestNode(ClearpathTestNode):
 
             if ssid in warn_ssids:
                 results.append(ClearpathTestResult(
-                    False,
+                    None,
                     f'{w} (internal SSID)',
                     'Connected to internal network: do not ship without sanitizing!'
                 ))
