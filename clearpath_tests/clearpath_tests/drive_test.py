@@ -129,7 +129,7 @@ class DriveTestNode(ClearpathTestNode):
             self.initial_position = transformed_pose.pose.position
             self.current_displacement = 0.0
         else:
-            self.current_displacement = transformed_pose.pose.position.x - self.initial_position.x  # noqa: E501
+            self.current_displacement = abs(transformed_pose.pose.position.x - self.initial_position.x)  # noqa: E501
 
     def start(self):
         self.start_time = self.get_clock().now()
@@ -152,17 +152,56 @@ Are all these conditions met?""")
 
         self.get_logger().info('Starting drive test')
         self.start()
+        start_time = self.get_clock().now()
         while not self.test_done:
             rclpy.spin_once(self)
+        end_time = self.get_clock().now()
+
+        results = []
+
+        expected_duration = Duration(seconds=self.goal_distance / self.max_speed)
+        test_duration = end_time - start_time
+
+        time_error = (
+            min(
+                expected_duration.nanoseconds,
+                test_duration.nanoseconds) /
+            max(
+                expected_duration.nanoseconds,
+                test_duration.nanoseconds
+            )
+        )
+        if time_error < 0.8:
+            results.append(ClearpathTestResult(
+                False,
+                f'{test_name} (duration)',
+                f'Robot took {test_duration.nanoseconds / 1000000000:0.2f}s to drive {self.goal_distance}m vs {expected_duration.nanoseconds / 1000000000:0.2f}s expected'
+            ))
+        else:
+            results.append(ClearpathTestResult(
+                True,
+                f'{test_name} (duration)',
+                None
+            ))
 
         user_response = self.promptYN(f"""Test complete.
 Measure the robot's actual displacement.
 Is it between {self.goal_distance * 0.9:0.2f}m and {self.goal_distance * 1.1:0.2f}m?""")
         if user_response == 'N':
             measured_distance = input('How far did the robot actually drive (in meters)? ')
-            return [ClearpathTestResult(False, test_name, f'Incorrect distance: {measured_distance}')]
+            results.append(ClearpathTestResult(
+                False,
+                f'{test_name} (accuracy)',
+                f'Incorrect distance: {measured_distance}'
+            ))
         else:
-            return [ClearpathTestResult(True, test_name, None)]
+            results.append(ClearpathTestResult(
+                True,
+                f'{test_name} (accuracy)',
+                None
+            ))
+
+        return results
 
 def main():
     setup_path = BaseGenerator.get_args()

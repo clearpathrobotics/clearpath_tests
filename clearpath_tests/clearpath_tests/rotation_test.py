@@ -144,17 +144,56 @@ Are all these conditions met?""")
 
         self.get_logger().info('Starting rotation test')
         self.start()
+        start_time = self.get_clock().now()
         while not self.test_done:
             rclpy.spin_once(self)
+        end_time = self.get_clock().now()
+
+        results = []
+
+        expected_duration = Duration(seconds = self.goal_rotations * math.pi * 2 / self.max_speed)
+        test_duration = end_time - start_time
+
+        time_error = (
+            min(
+                expected_duration.nanoseconds,
+                test_duration.nanoseconds) /
+            max(
+                expected_duration.nanoseconds,
+                test_duration.nanoseconds
+            )
+        )
+        if time_error < 0.8:
+            results.append(ClearpathTestResult(
+                False,
+                f'{test_name} (duration)',
+                f'Robot took {test_duration.nanoseconds / 1000000000:0.2f}s rotate {self.goal_rotations}x vs {expected_duration.nanoseconds / 1000000000:0.2f}s expected'
+            ))
+        else:
+            results.append(ClearpathTestResult(
+                True,
+                f'{test_name} (duration)',
+                None
+            ))
 
         user_response = self.promptYN("""Test complete.
 Measure the robot's actual alignment.
 Is it within 10 degrees of its original orientation?""")
         if user_response == 'N':
             measured_alignment = input("How many degrees off is the robot's alignment? ")
-            return [ClearpathTestResult(False, test_name, f'Incorrect aligment: {measured_alignment}')]
+            results.append(ClearpathTestResult(
+                False,
+                f'{test_name} (accuracy)',
+                f'Incorrect aligment: {measured_alignment}'
+            ))
         else:
-            return [ClearpathTestResult(True, test_name, None)]
+            results.append(ClearpathTestResult(
+                True,
+                f'{test_name} (accuracy)',
+                'Alignment OK'
+            ))
+
+        return results
 
 def main():
     setup_path = BaseGenerator.get_args()
