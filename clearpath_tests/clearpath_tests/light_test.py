@@ -35,6 +35,8 @@ from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
 import rclpy
 from rclpy.qos import qos_profile_system_default
 
+import threading
+
 
 class LightTestNode(ClearpathTestNode):
 
@@ -146,7 +148,7 @@ class LightTestNode(ClearpathTestNode):
 
         # Params
         self.lights_topic = self.get_parameter_or('lights_topic', f'/{self.namespace}/platform/cmd_lights')
-        self.publish_rate = self.get_parameter_or('publish_rate', 2)
+        self.publish_rate = self.get_parameter_or('publish_rate', 10)
 
         # Publisher and message
         self.msg = Lights()
@@ -158,9 +160,6 @@ class LightTestNode(ClearpathTestNode):
         self.colour = 0
 
     def publish_callback(self):
-        # Define the message to be sent
-
-
         # cycle through blue/green/red/white/off forever
         if not self.test_in_progress:
             if self.colour == 0:
@@ -201,17 +200,27 @@ class LightTestNode(ClearpathTestNode):
         self.publish_timer = self.create_timer(1 / self.publish_rate, self.publish_callback)
 
     def run_test(self):
-        results = []
+        self.results = []
         self.test_in_progress = True
-
         self.start()
+
+        self.test_done = False
+        ui_thread = threading.Thread(target=self.run_ui)
+        ui_thread.start()
+        while not self.test_done:
+            rclpy.spin_once(self)
+        ui_thread.join()
+        return self.results
+
+    def run_ui(self):
+        results = self.results
 
         # turn off all lights
         for i in range(self.light_zones):
             self.msg.lights[i].red = 0
             self.msg.lights[i].green = 0
             self.msg.lights[i].blue = 0
-        self.publisher.publish(self.msg)
+        #self.publisher.publish(self.msg)
         user_input = self.promptYN('Are all lights off?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
@@ -221,10 +230,10 @@ class LightTestNode(ClearpathTestNode):
 
         # turn all lights red
         for i in range(self.light_zones):
-            self.msg.lights[i].red = 255
+            self.msg.lights[i].red = 128
             self.msg.lights[i].green = 0
             self.msg.lights[i].blue = 0
-        self.publisher.publish(self.msg)
+        #self.publisher.publish(self.msg)
         user_input = self.promptYN('Are all lights red?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
@@ -235,9 +244,9 @@ class LightTestNode(ClearpathTestNode):
         # turn all lights green
         for i in range(self.light_zones):
             self.msg.lights[i].red = 0
-            self.msg.lights[i].green = 255
+            self.msg.lights[i].green = 128
             self.msg.lights[i].blue = 0
-        self.publisher.publish(self.msg)
+        #self.publisher.publish(self.msg)
         user_input = self.promptYN('Are all lights green?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
@@ -249,8 +258,8 @@ class LightTestNode(ClearpathTestNode):
         for i in range(self.light_zones):
             self.msg.lights[i].red = 0
             self.msg.lights[i].green = 0
-            self.msg.lights[i].blue = 255
-        self.publisher.publish(self.msg)
+            self.msg.lights[i].blue = 128
+        #self.publisher.publish(self.msg)
         user_input = self.promptYN('Are all lights blue?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
@@ -260,9 +269,9 @@ class LightTestNode(ClearpathTestNode):
 
         # turn all lights white
         for i in range(self.light_zones):
-            self.msg.lights[i].red = 255
-            self.msg.lights[i].green = 255
-            self.msg.lights[i].blue = 255
+            self.msg.lights[i].red = 128
+            self.msg.lights[i].green = 128
+            self.msg.lights[i].blue = 128
         self.publisher.publish(self.msg)
         user_input = self.promptYN('Are all lights white?')
         if user_input == 'N':
@@ -275,14 +284,14 @@ class LightTestNode(ClearpathTestNode):
         # test each corner
         for i in range(self.light_zones):
             if i in self.front_left:
-                self.msg.lights[i].red = 255
-                self.msg.lights[i].green = 255
-                self.msg.lights[i].blue = 255
+                self.msg.lights[i].red = 128
+                self.msg.lights[i].green = 128
+                self.msg.lights[i].blue = 128
             else:
                 self.msg.lights[i].red = 0
                 self.msg.lights[i].green = 0
                 self.msg.lights[i].blue = 0
-        self.publisher.publish(self.msg)
+        #self.publisher.publish(self.msg)
         user_input = self.promptYN('Is the front-left light white and all other lights off?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
@@ -292,14 +301,14 @@ class LightTestNode(ClearpathTestNode):
 
         for i in range(self.light_zones):
             if i in self.front_right:
-                self.msg.lights[i].red = 255
-                self.msg.lights[i].green = 255
-                self.msg.lights[i].blue = 255
+                self.msg.lights[i].red = 128
+                self.msg.lights[i].green = 128
+                self.msg.lights[i].blue = 128
             else:
                 self.msg.lights[i].red = 0
                 self.msg.lights[i].green = 0
                 self.msg.lights[i].blue = 0
-        self.publisher.publish(self.msg)
+        #self.publisher.publish(self.msg)
         user_input = self.promptYN('Is the front-right light white and all other lights off?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
@@ -309,14 +318,14 @@ class LightTestNode(ClearpathTestNode):
 
         for i in range(self.light_zones):
             if i in self.back_left:
-                self.msg.lights[i].red = 255
-                self.msg.lights[i].green = 255
-                self.msg.lights[i].blue = 255
+                self.msg.lights[i].red = 128
+                self.msg.lights[i].green = 128
+                self.msg.lights[i].blue = 128
             else:
                 self.msg.lights[i].red = 0
                 self.msg.lights[i].green = 0
                 self.msg.lights[i].blue = 0
-        self.publisher.publish(self.msg)
+        #self.publisher.publish(self.msg)
         user_input = self.promptYN('Is the back-left light white and all other lights off?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
@@ -326,14 +335,14 @@ class LightTestNode(ClearpathTestNode):
 
         for i in range(self.light_zones):
             if i in self.back_right:
-                self.msg.lights[i].red = 255
-                self.msg.lights[i].green = 255
-                self.msg.lights[i].blue = 255
+                self.msg.lights[i].red = 128
+                self.msg.lights[i].green = 128
+                self.msg.lights[i].blue = 128
             else:
                 self.msg.lights[i].red = 0
                 self.msg.lights[i].green = 0
                 self.msg.lights[i].blue = 0
-        self.publisher.publish(self.msg)
+        #self.publisher.publish(self.msg)
         user_input = self.promptYN('Is the back-right light white and all other lights off?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
@@ -347,14 +356,14 @@ class LightTestNode(ClearpathTestNode):
             # test each row of lights
             for i in range(self.light_zones):
                 if i in self.top_row:
-                    self.msg.lights[i].red = 255
-                    self.msg.lights[i].green = 255
-                    self.msg.lights[i].blue = 255
+                    self.msg.lights[i].red = 128
+                    self.msg.lights[i].green = 128
+                    self.msg.lights[i].blue = 128
                 else:
                     self.msg.lights[i].red = 0
                     self.msg.lights[i].green = 0
                     self.msg.lights[i].blue = 0
-            self.publisher.publish(self.msg)
+            #self.publisher.publish(self.msg)
             user_input = self.promptYN('Is the top row of lights white and bottom row off?')
             if user_input == 'N':
                 notes = input('Briefly describe the problem > ')
@@ -364,14 +373,14 @@ class LightTestNode(ClearpathTestNode):
 
             for i in range(self.light_zones):
                 if i in self.bottom_row:
-                    self.msg.lights[i].red = 255
-                    self.msg.lights[i].green = 255
-                    self.msg.lights[i].blue = 255
+                    self.msg.lights[i].red = 128
+                    self.msg.lights[i].green = 128
+                    self.msg.lights[i].blue = 128
                 else:
                     self.msg.lights[i].red = 0
                     self.msg.lights[i].green = 0
                     self.msg.lights[i].blue = 0
-            self.publisher.publish(self.msg)
+            #self.publisher.publish(self.msg)
             user_input = self.promptYN('Is the bottom row of lights white and top row off?')
             if user_input == 'N':
                 notes = input('Briefly describe the problem > ')
@@ -379,14 +388,14 @@ class LightTestNode(ClearpathTestNode):
             else:
                 results.append(ClearpathTestResult(True, 'Bottom row white', None))
 
-        return results
+        self.test_done = True
 
 
 def main():
     setup_path = BaseGenerator.get_args()
     rclpy.init()
 
-    lt = LightTestNode(setup_path)
+    lt = LightTestNode(setup_path=setup_path)
 
     try:
         lt.start()
