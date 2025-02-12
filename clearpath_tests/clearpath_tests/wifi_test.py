@@ -128,6 +128,17 @@ class WifiTestNode(ClearpathTestNode):
         self.publish_timer = self.create_timer(1, self.publish_callback)
 
     def run_test(self):
+        # Clearpath internal SSIDs
+        # If a robot is connected to these during production tests, raise a warning
+        warn_ssids = [
+            'BG-123',
+            'BG-386',
+            'LV-1201',
+            'LV-223',
+            'LV-426',
+            'LV-485',
+        ]
+
         results = []
         self.get_logger().info('Sampling wifi data...')
         n_samples = 5
@@ -150,11 +161,30 @@ class WifiTestNode(ClearpathTestNode):
                 bitrate += s.bitrate / n_samples
 
             if ssid is None:
-                results.append(ClearpathTestResult(False, w, 'No ESSID. Wifi not configured?'))
+                results.append(ClearpathTestResult(
+                    False,
+                    f'{w} (connection)',
+                    'No ESSID. Wifi not configured?'
+                ))
             elif bitrate < 10:  # slower than 10Mb/s
-                results.append(ClearpathTestResult(False, w, f'Connected to {ssid}. Low bitrate {bitrate} Mb/s'))
+                results.append(ClearpathTestResult(
+                    False,
+                    f'{w} (connection)',
+                    f'Connected to {ssid}. Low bitrate {bitrate} Mb/s'
+                ))
             else:
-                results.append(ClearpathTestResult(True, w, f'Connected to {ssid}. Bitrate {bitrate} Mb/s'))
+                results.append(ClearpathTestResult(
+                    True,
+                    f'{w} (connection)',
+                    f'Connected to {ssid}. Bitrate {bitrate} Mb/s'
+                ))
+
+            if ssid in warn_ssids:
+                results.append(ClearpathTestResult(
+                    False,
+                    f'{w} (internal SSID)',
+                    'Connected to internal network: do not ship without sanitizing!'
+                ))
 
         return results
 
