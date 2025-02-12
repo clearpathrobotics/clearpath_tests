@@ -96,6 +96,7 @@ class TestingNode(Node):
 
             self.tests_for_platform.append(estop_test.EstopTestNode('Front', self.setup_path))
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear', self.setup_path))
+            self.tests_for_platform.append(estop_test.EstopTestNode('Access Panel', self.setup_path))  # rear access hatch should also act as an e-stop
 
             # vcan0 has the 4 motor drivers
             self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 4, self.setup_path))
