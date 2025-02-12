@@ -133,9 +133,9 @@ class EstopTestNode(ClearpathTestNode):
 
         print(f'Engage the {self.estop_location} emergency stop now.')
         if not self.wait_for_estop(True, 30):
-            results.append(ClearpathTestNode(False, self.test_name, 'E-stop failed to engage'))
+            results.append(ClearpathTestResult(False, self.test_name, 'E-stop failed to engage'))
         else:
-            results.append(ClearpathTestNode(True, self.test_name, 'E-stop engaged'))
+            results.append(ClearpathTestResult(True, self.test_name, 'E-stop engaged'))
 
         user_input = self.promptYN('Will now command the wheels to turn\nIs the robot on blocks?')
         if user_input == 'N':
@@ -160,9 +160,9 @@ class EstopTestNode(ClearpathTestNode):
 
         print(f'Clear the {self.estop_location} emergency stop now.')
         if not self.wait_for_estop(False, 30):
-            results.append(ClearpathTestNode(False, self.test_name, 'E-stop failed to clear'))
+            results.append(ClearpathTestResult(False, self.test_name, 'E-stop failed to clear'))
         else:
-            results.append(ClearpathTestNode(True, self.test_name, 'E-stop cleared'))
+            results.append(ClearpathTestResult(True, self.test_name, 'E-stop cleared'))
 
         if safe_to_drive:
             self.command_wheels()
