@@ -220,7 +220,6 @@ class LightTestNode(ClearpathTestNode):
             self.msg.lights[i].red = 0
             self.msg.lights[i].green = 0
             self.msg.lights[i].blue = 0
-        #self.publisher.publish(self.msg)
         user_input = self.promptYN('Are all lights off?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
@@ -233,7 +232,6 @@ class LightTestNode(ClearpathTestNode):
             self.msg.lights[i].red = 128
             self.msg.lights[i].green = 0
             self.msg.lights[i].blue = 0
-        #self.publisher.publish(self.msg)
         user_input = self.promptYN('Are all lights red?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
@@ -246,7 +244,6 @@ class LightTestNode(ClearpathTestNode):
             self.msg.lights[i].red = 0
             self.msg.lights[i].green = 128
             self.msg.lights[i].blue = 0
-        #self.publisher.publish(self.msg)
         user_input = self.promptYN('Are all lights green?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
@@ -259,7 +256,6 @@ class LightTestNode(ClearpathTestNode):
             self.msg.lights[i].red = 0
             self.msg.lights[i].green = 0
             self.msg.lights[i].blue = 128
-        #self.publisher.publish(self.msg)
         user_input = self.promptYN('Are all lights blue?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
@@ -291,7 +287,6 @@ class LightTestNode(ClearpathTestNode):
                 self.msg.lights[i].red = 0
                 self.msg.lights[i].green = 0
                 self.msg.lights[i].blue = 0
-        #self.publisher.publish(self.msg)
         user_input = self.promptYN('Is the front-left light white and all other lights off?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
@@ -308,7 +303,6 @@ class LightTestNode(ClearpathTestNode):
                 self.msg.lights[i].red = 0
                 self.msg.lights[i].green = 0
                 self.msg.lights[i].blue = 0
-        #self.publisher.publish(self.msg)
         user_input = self.promptYN('Is the front-right light white and all other lights off?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
@@ -325,7 +319,6 @@ class LightTestNode(ClearpathTestNode):
                 self.msg.lights[i].red = 0
                 self.msg.lights[i].green = 0
                 self.msg.lights[i].blue = 0
-        #self.publisher.publish(self.msg)
         user_input = self.promptYN('Is the back-left light white and all other lights off?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
@@ -342,7 +335,6 @@ class LightTestNode(ClearpathTestNode):
                 self.msg.lights[i].red = 0
                 self.msg.lights[i].green = 0
                 self.msg.lights[i].blue = 0
-        #self.publisher.publish(self.msg)
         user_input = self.promptYN('Is the back-right light white and all other lights off?')
         if user_input == 'N':
             notes = input('Briefly describe the problem > ')
@@ -363,7 +355,6 @@ class LightTestNode(ClearpathTestNode):
                     self.msg.lights[i].red = 0
                     self.msg.lights[i].green = 0
                     self.msg.lights[i].blue = 0
-            #self.publisher.publish(self.msg)
             user_input = self.promptYN('Is the top row of lights white and bottom row off?')
             if user_input == 'N':
                 notes = input('Briefly describe the problem > ')
@@ -380,7 +371,6 @@ class LightTestNode(ClearpathTestNode):
                     self.msg.lights[i].red = 0
                     self.msg.lights[i].green = 0
                     self.msg.lights[i].blue = 0
-            #self.publisher.publish(self.msg)
             user_input = self.promptYN('Is the bottom row of lights white and top row off?')
             if user_input == 'N':
                 notes = input('Briefly describe the problem > ')
