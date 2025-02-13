@@ -43,6 +43,7 @@ from rclpy.node import Node
 
 from datetime import datetime
 import os
+import subprocess
 
 from clearpath_config.clearpath_config import ClearpathConfig
 from clearpath_config.common.types.platform import Platform
@@ -59,7 +60,10 @@ from clearpath_tests import (
     rotation_test,
     wifi_test,
 )
-from clearpath_tests.test_node import ClearpathTestResult
+from clearpath_tests.test_node import (
+    ClearpathTestNode,
+    ClearpathTestResult,
+)
 
 
 class TestingNode(Node):
@@ -143,13 +147,16 @@ class TestingNode(Node):
             self.get_logger().warning('$HOME is undefined; using /tmp as default report location')
             default_log_dir = '/tmp'
 
+        timestamp = datetime.now().strftime("%Y%m%d%H%M")
         self.report_file = self.get_parameter_or(
             'report_file',
             os.path.join(
                 default_log_dir,
-                f'clearpath_test_results.{datetime.now().strftime("%Y%m%d%H%M")}.md'
+                f'clearpath_test_results.{timestamp}.md'
             )
         )
+        output_directory = os.path.dirname(self.report_file)
+        self.bag_file = os.path.join(output_directory, f'clearpath_test_results.{timestamp}.mcap')
 
         self.test_results = []
 
@@ -341,19 +348,54 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
         self.create_summary()
 
 
+def start_bag_recording(test_node:TestingNode):
+    FOUR_GiB = 4 * 2**30
+
+    p = subprocess.Popen([
+            'ros2',
+            'bag',
+            'record',
+            '-e',
+            f'/{test_node.clearpath_config.get_namespace()}/*',
+            '--include-hidden-topics',
+            '-s',
+            'mcap',
+            '-b',
+            f'{FOUR_GiB}',
+            '--disable-keyboard-controls',
+            '-o',
+            f'{test_node.bag_file}',
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        stdin=subprocess.PIPE,
+    )
+    return p
+
+
 def main(args=None):
     rclpy.init(args=args)
     test_node = TestingNode()
+    bag_proc = None
 
     try:
+        if ClearpathTestNode.promptYN('Record bag during tests?') == 'Y':
+            bag_proc = start_bag_recording(test_node)
         test_node.run_tests()
+
         print(f'\nTests complete. See {test_node.report_file} for full results')
+
+        if bag_proc is not None:
+            print(f'MCAP file(s) located at {test_node.bag_file}')
     except FileNotFoundError as err:
         test_node.get_logger().error(f'Failed to write report: {err}')
     except PermissionError as err:
         test_node.get_logger().error(f'Insufficient permissions to write report: {err}')
     except KeyboardInterrupt:
         test_node.get_logger().info('User aborted')
+    finally:
+        if bag_proc is not None:
+            bag_proc.terminate()
     rclpy.shutdown()
 
 if __name__ == '__main__':

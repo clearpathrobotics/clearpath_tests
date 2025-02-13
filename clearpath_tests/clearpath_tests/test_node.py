@@ -194,7 +194,8 @@ class ClearpathTestNode(Node):
         """
         raise NotImplementedError()
 
-    def promptYN(self, message: str, default: str = 'Y'):
+    @staticmethod
+    def promptYN(message: str, default: str = 'Y'):
         """
         Ask the user a yes/no question and return their response
 
