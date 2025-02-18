@@ -67,6 +67,7 @@ class DriveTestNode(ClearpathTestNode):
         self.drive_topic = self.get_parameter_or('drive_topic', 'cmd_vel')
         self.odom_topic = self.get_parameter_or('odom_topic', 'platform/odom/filtered')
         self.max_speed = self.get_parameter_or('max_speed', 0.1)  # 10cm/s; nice and safe
+        self.error_margin = self.get_parameter_or('error_margin', 0.05)  # +/-5%
         self.publish_rate = self.get_parameter_or('publish_rate', 30)
 
         if not self.odom_topic.startswith('/'):
@@ -186,7 +187,7 @@ Are all these conditions met?""")
 
         user_response = self.promptYN(f"""Test complete.
 Measure the robot's actual displacement.
-Is it between {self.goal_distance * 0.9:0.2f}m and {self.goal_distance * 1.1:0.2f}m?""")
+Is it between {self.goal_distance * (1.0 - self.error_margin):0.2f}m and {self.goal_distance * (1.0 + self.error_margin):0.2f}m?""")
         if user_response == 'N':
             measured_distance = input('How far did the robot actually drive (in meters)? ')
             results.append(ClearpathTestResult(

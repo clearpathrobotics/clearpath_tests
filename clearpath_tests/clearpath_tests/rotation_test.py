@@ -61,6 +61,7 @@ class RotationTestNode(ClearpathTestNode):
         self.drive_topic = self.get_parameter_or('drive_topic', 'cmd_vel')
         self.odom_topic = self.get_parameter_or('odom_topic', 'platform/odom/filtered')
         self.max_speed = self.get_parameter_or('max_speed', 0.2)  # slightly more than 10 deg/s
+        self.error_margin = self.get_parameter_or('error_margin', 10.0)  # +/-10 degrees
         self.publish_rate = self.get_parameter_or('publish_rate', 30)
 
         if not self.odom_topic.startswith('/'):
@@ -176,9 +177,9 @@ Are all these conditions met?""")
                 None
             ))
 
-        user_response = self.promptYN("""Test complete.
+        user_response = self.promptYN(f"""Test complete.
 Measure the robot's actual alignment.
-Is it within 10 degrees of its original orientation?""")
+Is it within {self.error_margin:0.1f} degrees of its original orientation?""")
         if user_response == 'N':
             measured_alignment = input("How many degrees off is the robot's alignment? ")
             results.append(ClearpathTestResult(
