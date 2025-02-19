@@ -136,6 +136,13 @@ Are all these conditions met?""")
             rclpy.spin_once(self)
         end_time = self.get_clock().now()
 
+        # ensure we stop the robot
+        # the publising timer is still running
+        # we need to support omni robots, so set linear X and Y!
+        self.cmd_vel.twist.linear.x = 0.0
+        self.cmd_vel.twist.linear.y = 0.0
+        self.cmd_vel.twist.angular.z = 0.0
+
         results = self.test_results
 
         if self.test_error:
