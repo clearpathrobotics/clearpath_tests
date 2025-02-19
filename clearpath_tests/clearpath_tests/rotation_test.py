@@ -118,6 +118,7 @@ class RotationTestNode(MobilityTestNode):
 
     def run_test(self):
         self.test_in_progress = True
+        self.last_rotation_complete_at = self.get_clock().now()
         test_name = f'Rotation {self.goal_rotations}x in place'
 
         user_response = self.promptYN(f"""The robot will rotate {self.goal_rotations} times
