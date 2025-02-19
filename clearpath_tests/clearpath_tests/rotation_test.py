@@ -30,7 +30,8 @@
 from clearpath_config.clearpath_config import ClearpathConfig
 from clearpath_generator_common.common import BaseGenerator
 
-from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
+from clearpath_tests.mobility_test import MobilityTestNode
+from clearpath_tests.test_node import ClearpathTestResult
 
 from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
@@ -45,7 +46,7 @@ from rclpy.qos import qos_profile_system_default, qos_profile_sensor_data
 from tf_transformations import euler_from_quaternion
 
 
-class RotationTestNode(ClearpathTestNode):
+class RotationTestNode(MobilityTestNode):
     """
     Uses odometry to rotate n complete rotations and then stops
 
@@ -57,25 +58,14 @@ class RotationTestNode(ClearpathTestNode):
         super().__init__('Rotation in place', 'rotation_test', setup_path)
 
         self.goal_rotations = self.get_parameter_or('rotations', 2)
-        self.enable_drive = self.get_parameter_or('enable_drive', True)
-        self.drive_topic = self.get_parameter_or('drive_topic', 'cmd_vel')
-        self.odom_topic = self.get_parameter_or('odom_topic', 'platform/odom/filtered')
         self.max_speed = self.get_parameter_or('max_speed', 0.2)  # slightly more than 10 deg/s
         self.error_margin = self.get_parameter_or('error_margin', 10.0)  # +/-10 degrees
-        self.publish_rate = self.get_parameter_or('publish_rate', 30)
 
-        if not self.odom_topic.startswith('/'):
-            self.odom_topic = f'/{self.namespace}/{self.odom_topic}'
-
-        if not self.drive_topic.startswith('/'):
-            self.drive_topic = f'/{self.namespace}/{self.drive_topic}'
-
+        self.initial_yaw = None
         self.num_rotations = 0
         self.current_orientation = 0.0
         self.previous_orientation = 0.0
         self.test_done = False
-        self.twist_msg = TwistStamped()
-        self.twist_msg.twist.angular.z = self.max_speed
 
     def publish_callback(self):
         if self.initial_yaw is None:
@@ -84,7 +74,14 @@ class RotationTestNode(ClearpathTestNode):
                 self.get_logger().error('Timed out waiting for odometry. Terminating test')
                 raise(TimeoutError('Timed out waiting for odometry'))
         else:
-            self.twist_msg.header.stamp = self.get_clock().now().to_msg()
+            # publish the desired velocity
+            if self.num_rotations >= self.goal_rotations:
+                self.cmd_vel.twist.angular.z = 0.0
+                self.test_done = True
+            else:
+                self.cmd_vel.twist.angular.z = self.max_speed
+            super().publish_callback()
+
             self.get_logger().info(f'Current rotation: {self.current_orientation * 180.0 / math.pi:0.2f} ({self.num_rotations}/{self.goal_rotations})')  # noqa: E501
 
             # count how many rotations we've done and stop when we reach the right number
@@ -96,16 +93,9 @@ class RotationTestNode(ClearpathTestNode):
                     self.num_rotations += 1
                     self.last_rotation_complete_at = self.get_clock().now()
 
-            if self.num_rotations >= self.goal_rotations:
-                self.twist_msg.twist.angular.z = 0.0
-                self.get_logger().info('Rotated desired times')
-
-            self.publisher.publish(self.twist_msg)
-
-            if self.num_rotations >= self.goal_rotations:
-                self.test_done = True
-
     def odom_callback(self, msg):
+        super().odom_callback(msg)
+
         xyzw = [
             msg.pose.pose.orientation.x,
             msg.pose.pose.orientation.y,
@@ -123,18 +113,11 @@ class RotationTestNode(ClearpathTestNode):
             self.current_orientation = rpy[2] - self.initial_yaw
 
     def start(self):
-        self.start_time = self.get_clock().now()
-        self.odom_timeout = Duration(seconds=10)
-        self.initial_yaw = None
-        self.odom_sub = self.create_subscription(Odometry, self.odom_topic, self.odom_callback, qos_profile_sensor_data)  # noqa: E501
-
-        self.get_logger().info(f'Waiting for odometry on {self.odom_topic}...')
-        self.last_rotation_complete_at = self.get_clock().now()
+        super().start()
         self.min_rotation_duration = Duration(seconds=3.0)
-        self.publisher = self.create_publisher(TwistStamped, self.drive_topic, qos_profile_system_default)  # noqa: E501
-        self.publish_timer = self.create_timer(1 / self.publish_rate, self.publish_callback)
 
     def run_test(self):
+        self.test_in_progress = True
         test_name = f'Rotation {self.goal_rotations}x in place'
 
         user_response = self.promptYN(f"""The robot will rotate {self.goal_rotations} times
@@ -146,53 +129,56 @@ Are all these conditions met?""")
         self.get_logger().info('Starting rotation test')
         self.start()
         start_time = self.get_clock().now()
-        while not self.test_done:
+        while not self.test_done and not self.test_error:
             rclpy.spin_once(self)
         end_time = self.get_clock().now()
 
-        results = []
+        results = self.test_results
 
-        expected_duration = Duration(seconds = self.goal_rotations * math.pi * 2 / self.max_speed)
-        test_duration = end_time - start_time
+        if self.test_error:
+            print(f'Test aborted due to an error: {self.test_error_msg}')
+        else:
+            expected_duration = Duration(seconds = self.goal_rotations * math.pi * 2 / self.max_speed)
+            test_duration = end_time - start_time
 
-        time_error = (
-            min(
-                expected_duration.nanoseconds,
-                test_duration.nanoseconds) /
-            max(
-                expected_duration.nanoseconds,
-                test_duration.nanoseconds
+            time_error = (
+                min(
+                    expected_duration.nanoseconds,
+                    test_duration.nanoseconds) /
+                max(
+                    expected_duration.nanoseconds,
+                    test_duration.nanoseconds
+                )
             )
-        )
-        if time_error < 0.8:
-            results.append(ClearpathTestResult(
-                False,
-                f'{test_name} (duration)',
-                f'Robot took {test_duration.nanoseconds / 1000000000:0.2f}s rotate {self.goal_rotations}x vs {expected_duration.nanoseconds / 1000000000:0.2f}s expected'
-            ))
-        else:
-            results.append(ClearpathTestResult(
-                True,
-                f'{test_name} (duration)',
-                None
-            ))
+            if time_error < 0.8:
+                results.append(ClearpathTestResult(
+                    False,
+                    f'{test_name} (duration)',
+                    f'Robot took {test_duration.nanoseconds / 1000000000:0.2f}s rotate {self.goal_rotations}x vs {expected_duration.nanoseconds / 1000000000:0.2f}s expected'
+                ))
+            else:
+                results.append(ClearpathTestResult(
+                    True,
+                    f'{test_name} (duration)',
+                    None
+                ))
 
-        user_response = self.promptYN(f"""Test complete.
-Measure the robot's actual alignment.
-Is it within {self.error_margin:0.1f} degrees of its original orientation?""")
-        if user_response == 'N':
-            measured_alignment = input("How many degrees off is the robot's alignment? ")
-            results.append(ClearpathTestResult(
-                False,
-                f'{test_name} (accuracy)',
-                f'Incorrect aligment: {measured_alignment}'
-            ))
-        else:
-            results.append(ClearpathTestResult(
-                True,
-                f'{test_name} (accuracy)',
-                'Alignment OK'
-            ))
+            user_response = self.promptYN(f"""Test complete.
+    Measure the robot's actual alignment.
+    Is it within {self.error_margin:0.1f} degrees of its original orientation?""")
+            if user_response == 'N':
+                measured_alignment = input("How many degrees off is the robot's alignment? ")
+                results.append(ClearpathTestResult(
+                    False,
+                    f'{test_name} (accuracy)',
+                    f'Incorrect aligment: {measured_alignment}'
+                ))
+            else:
+                results.append(ClearpathTestResult(
+                    True,
+                    f'{test_name} (accuracy)',
+                    'Alignment OK'
+                ))
 
         return results
 

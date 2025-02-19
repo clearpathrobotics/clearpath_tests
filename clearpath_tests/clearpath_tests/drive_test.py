@@ -27,12 +27,11 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from clearpath_config.clearpath_config import ClearpathConfig
 from clearpath_generator_common.common import BaseGenerator
 
+from clearpath_tests.mobility_test import MobilityTestNode
 from clearpath_tests.test_node import (
     ConfigurableTransformListener,
-    ClearpathTestNode,
     ClearpathTestResult
 )
 
@@ -50,7 +49,7 @@ from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 
 
-class DriveTestNode(ClearpathTestNode):
+class DriveTestNode(MobilityTestNode):
     """
     Uses odometry to drive a fixed distance forwards and then stop
 
@@ -62,19 +61,8 @@ class DriveTestNode(ClearpathTestNode):
         super().__init__('Drive Fixed Distance', 'drive_test', setup_path)
 
         self.goal_distance = self.get_parameter_or('distance', 5.0)
-        self.base_link = self.get_parameter_or('base_link', 'base_link')
-        self.enable_drive = self.get_parameter_or('enable_drive', True)
-        self.drive_topic = self.get_parameter_or('drive_topic', 'cmd_vel')
-        self.odom_topic = self.get_parameter_or('odom_topic', 'platform/odom/filtered')
         self.max_speed = self.get_parameter_or('max_speed', 0.1)  # 10cm/s; nice and safe
         self.error_margin = self.get_parameter_or('error_margin', 0.05)  # +/-5%
-        self.publish_rate = self.get_parameter_or('publish_rate', 30)
-
-        if not self.odom_topic.startswith('/'):
-            self.odom_topic = f'/{self.namespace}/{self.odom_topic}'
-
-        if not self.drive_topic.startswith('/'):
-            self.drive_topic = f'/{self.namespace}/{self.drive_topic}'
 
         self.current_displacement = None
         self.twist_msg = TwistStamped()
@@ -95,20 +83,19 @@ class DriveTestNode(ClearpathTestNode):
                 self.get_logger().error('Timed out waiting for odometry. Terminating test')
                 raise(TimeoutError('Timed out waiting for odometry'))
         else:
-            self.twist_msg.header.stamp = self.get_clock().now().to_msg()
-            self.get_logger().info(f'Current position: {self.current_displacement:0.2f}m ({self.goal_distance}m)')  # noqa: E501
-
-            # drive 5m forwards, then stop
             if self.current_displacement >= self.goal_distance:
                 self.get_logger().info('Reached goal')
-                self.twist_msg.twist.linear.x = 0.0
-
-            self.publisher.publish(self.twist_msg)
-
-            if self.twist_msg.twist.linear.x == 0:
+                self.cmd_vel.twist.linear.x = 0.0
                 self.test_done = True
+            else:
+                self.cmd_vel.twist.linear.x = self.max_speed
+            super().publish_callback()
+
+            self.get_logger().info(f'Current position: {self.current_displacement:0.2f}m ({self.goal_distance}m)')  # noqa: E501
 
     def odom_callback(self, msg):
+        super().odom_callback(msg)
+
         odom_frame = msg.header.frame_id
 
         try:
@@ -132,17 +119,8 @@ class DriveTestNode(ClearpathTestNode):
         else:
             self.current_displacement = abs(transformed_pose.pose.position.x - self.initial_position.x)  # noqa: E501
 
-    def start(self):
-        self.start_time = self.get_clock().now()
-        self.odom_timeout = Duration(seconds=10)
-        self.initial_position = None
-        self.odom_sub = self.create_subscription(Odometry, self.odom_topic, self.odom_callback, qos_profile_sensor_data)  # noqa: E501
-
-        self.get_logger().info(f'Waiting for odometry on {self.odom_topic}...')
-        self.publisher = self.create_publisher(TwistStamped, self.drive_topic, qos_profile_system_default)  # noqa: E501
-        self.publish_timer = self.create_timer(1 / self.publish_rate, self.publish_callback)
-
     def run_test(self):
+        self.test_in_progress = True
         test_name = f'Drive {self.goal_distance:0.1f}m'
 
         user_response = self.promptYN(f"""The robot will drive forwards approximately {self.goal_distance}m
@@ -154,53 +132,56 @@ Are all these conditions met?""")
         self.get_logger().info('Starting drive test')
         self.start()
         start_time = self.get_clock().now()
-        while not self.test_done:
+        while not self.test_done and not self.test_error:
             rclpy.spin_once(self)
         end_time = self.get_clock().now()
 
-        results = []
+        results = self.test_results
 
-        expected_duration = Duration(seconds=self.goal_distance / self.max_speed)
-        test_duration = end_time - start_time
+        if self.test_error:
+            print(f'Test aborted due to an error: {self.test_error_msg}')
+        else:
+            expected_duration = Duration(seconds=self.goal_distance / self.max_speed)
+            test_duration = end_time - start_time
 
-        time_error = (
-            min(
-                expected_duration.nanoseconds,
-                test_duration.nanoseconds) /
-            max(
-                expected_duration.nanoseconds,
-                test_duration.nanoseconds
+            time_error = (
+                min(
+                    expected_duration.nanoseconds,
+                    test_duration.nanoseconds) /
+                max(
+                    expected_duration.nanoseconds,
+                    test_duration.nanoseconds
+                )
             )
-        )
-        if time_error < 0.8:
-            results.append(ClearpathTestResult(
-                False,
-                f'{test_name} (duration)',
-                f'Robot took {test_duration.nanoseconds / 1000000000:0.2f}s to drive {self.goal_distance}m vs {expected_duration.nanoseconds / 1000000000:0.2f}s expected'
-            ))
-        else:
-            results.append(ClearpathTestResult(
-                True,
-                f'{test_name} (duration)',
-                None
-            ))
+            if time_error < 0.8:
+                results.append(ClearpathTestResult(
+                    False,
+                    f'{test_name} (duration)',
+                    f'Robot took {test_duration.nanoseconds / 1000000000:0.2f}s to drive {self.goal_distance}m vs {expected_duration.nanoseconds / 1000000000:0.2f}s expected'
+                ))
+            else:
+                results.append(ClearpathTestResult(
+                    True,
+                    f'{test_name} (duration)',
+                    None
+                ))
 
-        user_response = self.promptYN(f"""Test complete.
-Measure the robot's actual displacement.
-Is it between {self.goal_distance * (1.0 - self.error_margin):0.2f}m and {self.goal_distance * (1.0 + self.error_margin):0.2f}m?""")
-        if user_response == 'N':
-            measured_distance = input('How far did the robot actually drive (in meters)? ')
-            results.append(ClearpathTestResult(
-                False,
-                f'{test_name} (accuracy)',
-                f'Incorrect distance: {measured_distance}'
-            ))
-        else:
-            results.append(ClearpathTestResult(
-                True,
-                f'{test_name} (accuracy)',
-                None
-            ))
+            user_response = self.promptYN(f"""Test complete.
+    Measure the robot's actual displacement.
+    Is it between {self.goal_distance * (1.0 - self.error_margin):0.2f}m and {self.goal_distance * (1.0 + self.error_margin):0.2f}m?""")
+            if user_response == 'N':
+                measured_distance = input('How far did the robot actually drive (in meters)? ')
+                results.append(ClearpathTestResult(
+                    False,
+                    f'{test_name} (accuracy)',
+                    f'Incorrect distance: {measured_distance}'
+                ))
+            else:
+                results.append(ClearpathTestResult(
+                    True,
+                    f'{test_name} (accuracy)',
+                    None
+                ))
 
         return results
 

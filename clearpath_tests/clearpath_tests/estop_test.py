@@ -151,7 +151,7 @@ Safe to continue?""")
         else:
             results.append(ClearpathTestResult(True, self.test_name, 'E-stop engaged'))
 
-        user_input = self.promptYN('Will now command the wheels to turn\nIs the robot on blocks?')
+        user_input = self.promptYN('Will now command the wheels to turn\nSafe to proceed?')
         if user_input == 'N':
             safe_to_drive = False
             results.append(None, f'{self.test_name} (wheel rotation)', 'User skipped; unsafe setup')
