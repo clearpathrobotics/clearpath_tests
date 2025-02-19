@@ -82,7 +82,7 @@ class RotationTestNode(MobilityTestNode):
                 self.cmd_vel.twist.angular.z = self.max_speed
             super().publish_callback()
 
-            self.get_logger().info(f'Current rotation: {self.current_orientation * 180.0 / math.pi:0.2f} ({self.num_rotations}/{self.goal_rotations})')  # noqa: E501
+            self.get_logger().info(f'Current rotation: {self.current_orientation * 180.0 / math.pi:0.2f} ({self.num_rotations + 1}/{self.goal_rotations})')  # noqa: E501
 
             # count how many rotations we've done and stop when we reach the right number
             if self.current_orientation >= 0 and self.previous_orientation < 0:
@@ -144,7 +144,7 @@ Are all these conditions met?""")
         results = self.test_results
 
         if self.test_error:
-            print(f'Test aborted due to an error: {self.test_error_msg}')
+            self.get_logger().warning(f'Test aborted due to an error: {self.test_error_msg}')
         else:
             expected_duration = Duration(seconds = self.goal_rotations * math.pi * 2 / self.max_speed)
             test_duration = end_time - start_time

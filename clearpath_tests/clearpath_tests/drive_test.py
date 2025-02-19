@@ -146,7 +146,7 @@ Are all these conditions met?""")
         results = self.test_results
 
         if self.test_error:
-            print(f'Test aborted due to an error: {self.test_error_msg}')
+            self.get_logger().warning(f'Test aborted due to an error: {self.test_error_msg}')
         else:
             expected_duration = Duration(seconds=self.goal_distance / self.max_speed)
             test_duration = end_time - start_time
