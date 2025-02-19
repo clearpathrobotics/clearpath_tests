@@ -101,9 +101,11 @@ class EstopTestNode(ClearpathTestNode):
     def run_ui(self):
         results = self.results
 
-        user_input = self.promptYN(
-            'Ensure the robot is on blocks and the wheels are not on the ground\nSafe to continue?'
-        )
+        user_input = self.promptYN("""The robot will be commanded to drive forwards at 0.1m/s for 2s multiple
+times during this test.
+Ensure the robot is either on blocks with the wheels not on the ground
+or that it is safe for the robot to drive forwards.
+Safe to continue?""")
         if user_input == 'N':
             results.append(ClearpathTestResult(
                 False,
