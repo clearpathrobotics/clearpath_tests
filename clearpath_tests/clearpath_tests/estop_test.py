@@ -158,7 +158,7 @@ Safe to continue?""")
         else:
             safe_to_drive = True
             self.command_wheels()
-            user_input = self.promptYN('Did the wheels rotate?')
+            user_input = self.promptYN('Did the wheels rotate?', default='N')
             if user_input == 'Y':
                 results.append(ClearpathTestResult(
                     False,
