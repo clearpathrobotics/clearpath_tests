@@ -87,15 +87,15 @@ class MobilityTestNode(ClearpathTestNode):
         self.motor_currents = []
         if self.platform == Platform.A300:
             self.motor_fb_sub = self.create_subscription(
-                f'/{self.namespace}/platform/motors/feedback',
                 LynxMultiFeedback,
+                f'/{self.namespace}/platform/motors/feedback',
                 self.on_lynx_status,
                 qos_profile_sensor_data,
             )
         else:
             self.motor_fb_sub = self.create_subscription(
-                f'/{self.namespace}/platform/motors/feedback',
                 PumaMultiFeedback,
+                f'/{self.namespace}/platform/motors/feedback',
                 self.on_puma_status,
                 qos_profile_sensor_data,
             )
