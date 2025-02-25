@@ -32,7 +32,11 @@ from clearpath_config.common.types.platform import Platform
 
 from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
 
-from clearpath_motor_msgs.msg import LynxSystemProtection
+from clearpath_motor_msgs.msg import (
+    LynxMultiFeedback,
+    LynxSystemProtection,
+    PumaMultiFeedback,
+)
 from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
 
@@ -80,6 +84,22 @@ class MobilityTestNode(ClearpathTestNode):
             self.drive_topic = f'/{self.namespace}/{self.drive_topic}'
 
     def start(self):
+        self.motor_currents = []
+        if self.platform == Platform.A300:
+            self.motor_fb_sub = self.create_subscription(
+                f'/{self.namespace}/platform/motors/feedback',
+                LynxMultiFeedback,
+                self.on_lynx_status,
+                qos_profile_sensor_data,
+            )
+        else:
+            self.motor_fb_sub = self.create_subscription(
+                f'/{self.namespace}/platform/motors/feedback',
+                PumaMultiFeedback,
+                self.on_puma_status,
+                qos_profile_sensor_data,
+            )
+
         self.start_time = self.get_clock().now()
         self.odom_timeout = Duration(seconds=10)
         self.initial_position = None
@@ -106,6 +126,45 @@ class MobilityTestNode(ClearpathTestNode):
                 self.lynx_callback,
                 qos_profile_sensor_data,
             )
+
+    def on_puma_status(self, puma_status:PumaMultiFeedback):
+        if not self.test_in_progress or self.test_error or self.test_done:
+            return
+
+        currents = []
+        for driver in puma_status.drivers_feedback:
+            currents.append(driver.current)
+        self.motor_currents.append(currents)
+
+    def on_lynx_status(self, lynx_status:LynxMultiFeedback):
+        if not self.test_in_progress or self.test_error or self.test_done:
+            return
+
+        currents = []
+        for driver in lynx_status.drivers:
+            currents.append(driver.current)
+        self.motor_currents.append(currents)
+
+    def calculate_average_motor_currents(self):
+        if len(self.motor_currents) == 0:
+            return []
+
+        average_currents = []
+        for i in range(len(self.motor_currents[0])):
+            average_currents.append(0.0)
+            for sample in self.motor_currents:
+                average_currents[i] += sample[i]
+            average_currents[i] /= len(self.motor_currents)
+
+        return average_currents
+
+    def get_test_result_details(self):
+        details = ''
+        details += '\n#### Average motor current draw during test\n\n'
+        avg = self.calculate_average_motor_currents()
+        for amps in avg:
+            details += f'* {amps:0.3f}A'
+        return details
 
     def odom_callback(self, odom_msg):
         self.latest_odom = odom_msg
