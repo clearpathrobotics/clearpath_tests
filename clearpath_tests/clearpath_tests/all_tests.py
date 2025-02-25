@@ -330,11 +330,14 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
             menu_entries=menu_items,
             show_multi_select_hint=True,
             multi_select=True,
+            clear_screen=True,
         )
 
         menu_entry_indices = main_menu.show()
 
-        if 0 in menu_entry_indices:
+        if menu_entry_indices is None or len(menu_entry_indices) == 0:
+            return []
+        elif 0 in menu_entry_indices:
             tests_in_order.pop(0)
             return tests_in_order
         else:
@@ -350,9 +353,13 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
 
         The exact tests executed depends on the configured platform
         """
+        tests_to_run = self.prompt_tests()
+
         self.write_header()
 
-        tests_to_run = self.prompt_tests()
+        if len(tests_to_run):
+            self.get_logger().warning('No tests selected. Terminating')
+            return
 
         n = 1
         for node in tests_to_run:
