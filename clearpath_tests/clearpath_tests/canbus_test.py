@@ -167,6 +167,7 @@ class CanbusTestNode(ClearpathTestNode):
         details += '\n#### Detected CAN device IDs\n\n'
         for id in self.detected_ids:
             details += f'* {id}\n'
+        return details
 
 
 def main():
