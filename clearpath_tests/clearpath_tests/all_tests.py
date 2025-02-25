@@ -325,8 +325,20 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
             menu_items.append(f'[{letter}] {test}')
             tests_in_order.append(test)
 
+        # Clearpath Tests -- https://patorjk.com/software/taag/#p=display&v=0&f=Small
+        title="""
+   ___ _                         _   _      _____       _
+  / __| |___ __ _ _ _ _ __  __ _| |_| |_   |_   _|__ __| |_ ___
+ | (__| / -_) _` | '_| '_ \\/ _` |  _| ' \\    | |/ -_|_-<  _(_-<
+  \\___|_\\___\\__,_|_| | .__/\\__,_|\\__|_||_|   |_|\\___/__/\\__/__/
+                     |_|
+
+  Select tests.
+  Press Q or Esc to quit.
+"""
+
         main_menu = TerminalMenu(
-            title='  Select tests.\n  Press Q or Esc to quit. \n',
+            title=title,
             menu_entries=menu_items,
             show_multi_select_hint=True,
             multi_select=True,
