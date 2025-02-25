@@ -166,6 +166,9 @@ class ClearpathTestNode(Node):
         self.platform = self.clearpath_config.platform.get_platform_model()
         self.namespace = self.clearpath_config.get_namespace()
 
+    def __str__(self):
+        return self.test_name
+
     def run_test(self):
         """
         Run this node interactively, prompting the user for input.

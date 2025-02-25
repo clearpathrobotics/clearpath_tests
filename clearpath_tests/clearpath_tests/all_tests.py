@@ -297,6 +297,53 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
         with open(self.report_file, 'a') as report:
             report.write(f'{test_result}\n\n')
 
+    def prompt_tests(self):
+        """
+        Ask the user to select what test(s) to run
+
+        Returns the array of tests the user selected
+        """
+        from simple_term_menu import TerminalMenu
+
+        letter = 'a'
+        tests_in_order = [
+            None  # placeholder for all tests
+        ]
+        menu_items = [
+            f'[{letter}] All tests'
+        ]
+        for test in self.common_tests:
+            letter = chr(ord(letter) + 1)
+            menu_items.append(f'[{letter}] {test}')
+            tests_in_order.append(test)
+        for test in self.tests_for_platform:
+            letter = chr(ord(letter) + 1)
+            menu_items.append(f'[{letter}] {test}')
+            tests_in_order.append(test)
+        for test in self.driving_tests:
+            letter = chr(ord(letter) + 1)
+            menu_items.append(f'[{letter}] {test}')
+            tests_in_order.append(test)
+
+        main_menu = TerminalMenu(
+            title='  Select tests.\n  Press Q or Esc to quit. \n',
+            menu_entries=menu_items,
+            show_multi_select_hint=True,
+            multi_select=True,
+        )
+
+        menu_entry_indices = main_menu.show()
+
+        if 0 in menu_entry_indices:
+            tests_in_order.pop(0)
+            return tests_in_order
+        else:
+            tests_to_run = []
+            for i in menu_entry_indices:
+                tests_to_run.append(tests_in_order[i])
+            return tests_to_run
+
+
     def run_tests(self):
         """
         Go through the tests one at a time, logging the results as we go
@@ -305,18 +352,12 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
         """
         self.write_header()
 
-        tests_to_run = []
-        for test in self.common_tests:
-            tests_to_run.append(test)
-        for test in self.tests_for_platform:
-            tests_to_run.append(test)
-        for test in self.driving_tests:
-            tests_to_run.append(test)
+        tests_to_run = self.prompt_tests()
 
         n = 1
         for node in tests_to_run:
             self.get_logger().info(f'Starting ({node.test_name}) (test {n} of {len(tests_to_run)})')
-            user_input = node.promptYN(f'Run test {node.test_name}?')
+            user_input = node.promptYN(f'Ready to run test {node.test_name}?')
             details = None
             results = []
             if user_input == 'N':
