@@ -27,21 +27,15 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from clearpath_config.clearpath_config import ClearpathConfig
 from clearpath_generator_common.common import BaseGenerator
 
 from clearpath_tests.mobility_test import MobilityTestNode
 from clearpath_tests.test_node import ClearpathTestResult
 
-from geometry_msgs.msg import TwistStamped
-from nav_msgs.msg import Odometry
-
 import math
-import os
 
 import rclpy
 from rclpy.duration import Duration
-from rclpy.qos import qos_profile_system_default, qos_profile_sensor_data
 
 from tf_transformations import euler_from_quaternion
 

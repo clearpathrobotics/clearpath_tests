@@ -36,13 +36,9 @@ from clearpath_tests.test_node import (
 )
 
 from geometry_msgs.msg import PoseStamped, TwistStamped
-from nav_msgs.msg import Odometry
-
-import os
 
 import rclpy
 from rclpy.duration import Duration
-from rclpy.qos import qos_profile_system_default, qos_profile_sensor_data
 
 from tf2_geometry_msgs import do_transform_pose_stamped
 from tf2_ros import TransformException
