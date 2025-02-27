@@ -196,11 +196,32 @@ class ImuTestNode(ClearpathTestNode):
         avg_y /= len(self.accel_samples)
         avg_z /= len(self.accel_samples)
 
-        test_tolerance = 0.9
+        # allow 10% error on the IMU since the ground may never be completely level
+        test_tolerance = 0.1
+
+        x_lower_limit = expected_x - g * test_tolerance
+        x_upper_limit = expected_x + g * test_tolerance
+
+        y_lower_limit = expected_y - g * test_tolerance
+        y_upper_limit = expected_y + g * test_tolerance
+
+        z_lower_limit = expected_z - g * test_tolerance
+        z_upper_limit = expected_z + g * test_tolerance
         if (
-            abs(min(avg_x, expected_x) / max(avg_x, expected_x)) >= test_tolerance and
-            abs(min(avg_y, expected_y) / max(avg_y, expected_y)) >= test_tolerance and
-            abs(min(avg_z, expected_z) / max(avg_z, expected_z)) >= test_tolerance
+            # check that the measurements are witin our error bars
+            avg_x >= x_lower_limit and avg_x <= x_upper_limit and
+            avg_y >= y_lower_limit and avg_y <= y_upper_limit and
+            avg_z >= z_lower_limit and avg_z <= z_upper_limit and
+
+            # ensure gravity is mainly +Z
+            avg_z > 5.0 and
+
+            # check our inclination is the right way
+            (
+                (avg_x > 0 and x_angle > 0) or
+                (avg_y > 0 and y_angle > 0) or
+                (x_angle == 0 and y_angle == 0)
+            )
         ):
             return ClearpathTestResult(
                 True,
