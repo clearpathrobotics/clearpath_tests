@@ -93,6 +93,7 @@ class TestingNode(Node):
         self.tests_for_platform = []
         if self.platform == Platform.A200:
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear', self.setup_path))
+            self.tests_for_platform.append(estop_test.EstopTestNode('Key Switch', self.setup_path))
         elif self.platform == Platform.A300:
             # TODO
             # temporarily disable the fans while some firmware changes are in-progress
@@ -102,6 +103,7 @@ class TestingNode(Node):
             self.tests_for_platform.append(estop_test.EstopTestNode('Front', self.setup_path))
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear', self.setup_path))
             self.tests_for_platform.append(estop_test.EstopTestNode('Access Panel', self.setup_path))  # rear access hatch should also act as an e-stop
+            self.tests_for_platform.append(estop_test.EstopTestNode('Key Switch', self.setup_path))
 
             self.tests_for_platform.append(imu_test.ImuTestNode(0, self.setup_path))
 
