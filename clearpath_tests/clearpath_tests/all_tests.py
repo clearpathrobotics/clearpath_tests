@@ -368,7 +368,7 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
 
         self.write_header()
 
-        if len(tests_to_run):
+        if len(tests_to_run) == 0:
             self.get_logger().warning('No tests selected. Terminating')
             return
 
