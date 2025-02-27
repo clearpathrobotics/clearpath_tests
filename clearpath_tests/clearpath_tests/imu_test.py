@@ -189,9 +189,9 @@ class ImuTestNode(ClearpathTestNode):
         avg_y = 0
         avg_z = 0
         for sample in self.accel_samples:
-            avg_x += sample.x
-            avg_y += sample.y
-            avg_z += sample.z
+            avg_x += sample.vector.x
+            avg_y += sample.vector.y
+            avg_z += sample.vector.z
         avg_x /= len(self.accel_samples)
         avg_y /= len(self.accel_samples)
         avg_z /= len(self.accel_samples)
