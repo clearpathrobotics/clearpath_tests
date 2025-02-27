@@ -55,6 +55,7 @@ from clearpath_tests import (
     drive_test,
     estop_test,
     fan_test,
+    imu_test,
     light_test,
     mcu_test,
     rotation_test,
@@ -102,6 +103,8 @@ class TestingNode(Node):
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear', self.setup_path))
             self.tests_for_platform.append(estop_test.EstopTestNode('Access Panel', self.setup_path))  # rear access hatch should also act as an e-stop
 
+            self.tests_for_platform.append(imu_test.ImuTestNode(0, self.setup_path))
+
             # vcan0 has the 4 motor drivers
             self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 4, self.setup_path))
 
@@ -123,7 +126,7 @@ class TestingNode(Node):
         elif self.platform == Platform.GENERIC:
             pass
         elif self.platform == Platform.J100:
-            pass
+            self.tests_for_platform.append(imu_test.ImuTestNode(0, self.setup_path))
         elif self.platform == Platform.R100:
             self.tests_for_platform.append(light_test.LightTestNode(8))
             self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 4, self.setup_path))
@@ -305,24 +308,20 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
         """
         from simple_term_menu import TerminalMenu
 
-        letter = 'a'
         tests_in_order = [
             None  # placeholder for all tests
         ]
         menu_items = [
-            f'[{letter}] All tests'
+            'All tests'
         ]
         for test in self.common_tests:
-            letter = chr(ord(letter) + 1)
-            menu_items.append(f'[{letter}] {test}')
+            menu_items.append(f'{test}')
             tests_in_order.append(test)
         for test in self.tests_for_platform:
-            letter = chr(ord(letter) + 1)
-            menu_items.append(f'[{letter}] {test}')
+            menu_items.append(f'{test}')
             tests_in_order.append(test)
         for test in self.driving_tests:
-            letter = chr(ord(letter) + 1)
-            menu_items.append(f'[{letter}] {test}')
+            menu_items.append(f'{test}')
             tests_in_order.append(test)
 
         # Clearpath Tests -- https://patorjk.com/software/taag/#p=display&v=0&f=Small

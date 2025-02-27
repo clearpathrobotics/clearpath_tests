@@ -234,4 +234,4 @@ class ClearpathTestNode(Node):
         if len(user_input) == 0:
             return default
         else:
-            return user_input
+            return user_input[0].upper()

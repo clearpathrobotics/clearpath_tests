@@ -27,7 +27,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from clearpath_config.clearpath_config import ClearpathConfig
 from clearpath_tests.test_node import(
     ClearpathTestNode,
     ClearpathTestResult,
@@ -35,23 +34,18 @@ from clearpath_tests.test_node import(
 )
 from clearpath_generator_common.common import BaseGenerator
 
-from typing import Optional
-from typing import Union
+import math
 
 import rclpy
-from rclpy.callback_groups import ReentrantCallbackGroup
-from rclpy.executors import SingleThreadedExecutor
-from rclpy.node import Node
+from rclpy.duration import Duration
 from rclpy.qos import qos_profile_sensor_data
 
 from geometry_msgs.msg import Vector3Stamped
 from sensor_msgs.msg import Imu
 
 from tf2_geometry_msgs import do_transform_vector3
-from tf2_msgs.msg import TFMessage
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
-from tf2_ros.transform_listener import TransformListener
 
 
 class ImuTestNode(ClearpathTestNode):
@@ -62,8 +56,11 @@ class ImuTestNode(ClearpathTestNode):
     """
 
     def __init__(self, imu_num=0, setup_path='/etc/clearpath' ):
-        super().__init__(f'IMU Test (imu_{imu_num})', f'imu_{imu_num}_test', setup_path)
+        super().__init__(f'IMU (imu_{imu_num})', f'imu_{imu_num}_test', setup_path)
         self.test_in_progress = False
+        self.record_data = False
+        self.accel_samples = []
+        self.gyro_samples = []
 
         self.base_link = 'base_link'
         self.tf_buffer = Buffer()
@@ -94,16 +91,21 @@ class ImuTestNode(ClearpathTestNode):
         accel_vector.vector.z = imu_data.linear_acceleration.z
         transformed_accel = do_transform_vector3(accel_vector, transformation)
 
-        gyro_vector = Vector3Stamped
+        gyro_vector = Vector3Stamped()
         gyro_vector.header = imu_data.header
         gyro_vector.vector.x = imu_data.angular_velocity.x
         gyro_vector.vector.y = imu_data.angular_velocity.y
         gyro_vector.vector.z = imu_data.angular_velocity.z
         transformed_gyro = do_transform_vector3(gyro_vector, transformation)
 
-        self.get_logger().info(f'a ({transformed_accel.vector.x}, {transformed_accel.vector.y}, {transformed_accel.vector.z})')
-        self.get_logger().info(f'g ({transformed_gyro.vector.x}, {transformed_gyro.vector.y}, {transformed_gyro.vector.z})')
-        self.get_logger().info('---')
+        if not self.test_in_progress:
+            self.get_logger().info(f'a ({transformed_accel.vector.x}, {transformed_accel.vector.y}, {transformed_accel.vector.z})')
+            self.get_logger().info(f'g ({transformed_gyro.vector.x}, {transformed_gyro.vector.y}, {transformed_gyro.vector.z})')
+            self.get_logger().info('---')
+
+        if self.record_data:
+            self.accel_samples.append(transformed_accel)
+            self.gyro_samples.append(transformed_gyro)
 
     def start(self):
         self.imu_sub = self.create_subscription(
@@ -114,11 +116,104 @@ class ImuTestNode(ClearpathTestNode):
         )
 
     def run_test(self):
+        def gather_samples():
+            sample_duration = Duration(seconds=10)
+            print('Gathering 10s worth of IMU data...')
+            start_time = self.get_clock().now()
+            self.record_data = True
+            while self.get_clock().now() - start_time < sample_duration:
+                rclpy.spin_once(self)
+            self.record_data = False
+
+        self.record_data = False
         self.test_in_progress = True
         self.start()
 
-        while True:
-            pass
+        results = []
+
+        user_response = self.promptYN('Ensure the robot is on the ground and level.\nOK to proceeed?')
+        if not user_response == 'Y':
+            return [ClearpathTestResult(None, self.test_name, 'User aborted')]
+        gather_samples()
+        results.append(self.check_gravity('level', 0, 0))
+        self.accel_samples.clear()
+        self.gyro_samples.clear()
+
+        user_response = self.promptYN('Raise the REAR of the robot by 20 degrees.\nOK to proceeed?')
+        if not user_response == 'Y':
+            return [ClearpathTestResult(None, self.test_name, 'User aborted')]
+        gather_samples()
+        results.append(self.check_gravity('rear raised', 0, math.radians(20)))
+        self.accel_samples.clear()
+        self.gyro_samples.clear()
+
+        user_response = self.promptYN('Raise the LEFT of the robot by 20 degrees.\nOK to proceeed?')
+        if not user_response == 'Y':
+            return [ClearpathTestResult(None, self.test_name, 'User aborted')]
+        gather_samples()
+        results.append(self.check_gravity('left raised', math.radians(20), 0))
+        self.accel_samples.clear()
+        self.gyro_samples.clear()
+
+        return results
+
+
+    def check_gravity(self, label, x_angle=0.0, y_angle=0.0) -> ClearpathTestResult:
+        """
+        Analyse the accelerometer data and make sure gravity is properly oriented
+
+        Only x_angle or y_angle should be non-zero.
+
+        @param label
+        @param x_angle  The robot's front/back inclination
+        @param y_angle  The robot's left/right inclination
+
+        @return A ClearpathTestResult indicating if gravity is OK
+        """
+        if len(self.accel_samples) < 10:
+            return ClearpathTestResult(
+                False,
+                f'{self.test_name} ({label})',
+                f'{len(self.accel_samples)} samples collected; is IMU publishing at the right rate?'
+            )
+
+        g = 9.807
+        expected_x = g * math.sin(x_angle)
+        expected_y = g * math.sin(y_angle)
+        if abs(x_angle) > abs(y_angle):
+            expected_z = g * math.cos(x_angle)
+        else:
+            expected_z = g * math.cos(y_angle)
+
+        avg_x = 0
+        avg_y = 0
+        avg_z = 0
+        for sample in self.accel_samples:
+            avg_x += sample.x
+            avg_y += sample.y
+            avg_z += sample.z
+        avg_x /= len(self.accel_samples)
+        avg_y /= len(self.accel_samples)
+        avg_z /= len(self.accel_samples)
+
+        test_tolerance = 0.9
+        if (
+            abs(min(avg_x, expected_x) / max(avg_x, expected_x)) >= test_tolerance and
+            abs(min(avg_y, expected_y) / max(avg_y, expected_y)) >= test_tolerance and
+            abs(min(avg_z, expected_z) / max(avg_z, expected_z)) >= test_tolerance
+        ):
+            return ClearpathTestResult(
+                True,
+                f'{self.test_name} ({label})',
+                f'Measured gravity vector: ({avg_x:0.2f}, {avg_y:0.2f}, {avg_z:0.2f}) Expected: ({expected_x:0.2f}, {expected_y:0.2f}, {expected_z:0.2f})'
+            )
+        else:
+            return ClearpathTestResult(
+                False,
+                f'{self.test_name} ({label})',
+                f'Measured gravity vector: ({avg_x:0.2f}, {avg_y:0.2f}, {avg_z:0.2f}) Expected: ({expected_x:0.2f}, {expected_y:0.2f}, {expected_z:0.2f})'
+            )
+
 
 def main():
     setup_path = BaseGenerator.get_args()
