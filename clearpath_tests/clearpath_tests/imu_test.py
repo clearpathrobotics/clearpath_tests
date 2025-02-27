@@ -133,27 +133,42 @@ class ImuTestNode(ClearpathTestNode):
 
         user_response = self.promptYN('Ensure the robot is on the ground and level.\nOK to proceeed?')
         if not user_response == 'Y':
-            return [ClearpathTestResult(None, self.test_name, 'User aborted')]
-        gather_samples()
-        results.append(self.check_gravity('level', 0, 0))
-        self.accel_samples.clear()
-        self.gyro_samples.clear()
+            results.append(ClearpathTestResult(
+                None,
+                f'{self.test_name} (level)',
+                'User skipped'
+            ))
+        else:
+            gather_samples()
+            results.append(self.check_gravity('level', 0, 0))
+            self.accel_samples.clear()
+            self.gyro_samples.clear()
 
         user_response = self.promptYN('Raise the REAR of the robot by 20 degrees.\nOK to proceeed?')
         if not user_response == 'Y':
-            return [ClearpathTestResult(None, self.test_name, 'User aborted')]
-        gather_samples()
-        results.append(self.check_gravity('rear raised', 0, math.radians(20)))
-        self.accel_samples.clear()
-        self.gyro_samples.clear()
+            results.append(ClearpathTestResult(
+                None,
+                f'{self.test_name} (rear raised)',
+                'User skipped'
+            ))
+        else:
+            gather_samples()
+            results.append(self.check_gravity('rear raised', 0, math.radians(20)))
+            self.accel_samples.clear()
+            self.gyro_samples.clear()
 
         user_response = self.promptYN('Raise the LEFT of the robot by 20 degrees.\nOK to proceeed?')
         if not user_response == 'Y':
-            return [ClearpathTestResult(None, self.test_name, 'User aborted')]
-        gather_samples()
-        results.append(self.check_gravity('left raised', math.radians(20), 0))
-        self.accel_samples.clear()
-        self.gyro_samples.clear()
+            results.append(ClearpathTestResult(
+                None,
+                f'{self.test_name} (left raised)',
+                'User skipped'
+            ))
+        else:
+            gather_samples()
+            results.append(self.check_gravity('left raised', math.radians(20), 0))
+            self.accel_samples.clear()
+            self.gyro_samples.clear()
 
         return results
 
