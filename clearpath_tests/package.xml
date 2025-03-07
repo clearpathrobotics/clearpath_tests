@@ -16,7 +16,7 @@
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>rclpy</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
-  <exec_depend>simple_term_menu</exec_depend>
+  <exec_depend>simple_term_menu_vendor</exec_depend>
   <exec_depend>stress</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>
   <exec_depend>tf_transformations</exec_depend>
