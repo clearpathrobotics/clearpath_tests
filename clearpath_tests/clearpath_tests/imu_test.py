@@ -153,7 +153,7 @@ class ImuTestNode(ClearpathTestNode):
             ))
         else:
             gather_samples()
-            results.append(self.check_gravity('rear raised', 0, math.radians(20)))
+            results.append(self.check_gravity('rear raised', math.radians(20), 0))
             self.accel_samples.clear()
             self.gyro_samples.clear()
 
@@ -166,7 +166,7 @@ class ImuTestNode(ClearpathTestNode):
             ))
         else:
             gather_samples()
-            results.append(self.check_gravity('left raised', math.radians(20), 0))
+            results.append(self.check_gravity('left raised', 0, math.radians(20)))
             self.accel_samples.clear()
             self.gyro_samples.clear()
 
