@@ -2,8 +2,8 @@
 Changelog for package clearpath_tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.2.2 (2025-03-10)
+------------------
 * Add missing message dependencies
 * Contributors: Chris Iverach-Brereton
 
