@@ -10,6 +10,7 @@
   <exec_depend>can-utils</exec_depend>
   <exec_depend>clearpath_config</exec_depend>
   <exec_depend>clearpath_generator_common</exec_depend>
+  <exec_depend>clearpath_motor_msgs</exec_depend>
   <exec_depend>clearpath_platform_msgs</exec_depend>
   <exec_depend>diagnostic_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
@@ -17,8 +18,10 @@
   <exec_depend>rclpy</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>simple_term_menu_vendor</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
   <exec_depend>stress</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>
+  <exec_depend>tf2_msgs</exec_depend>
   <exec_depend>tf_transformations</exec_depend>
   <exec_depend>wireless_msgs</exec_depend>
 
