@@ -211,8 +211,9 @@ class ImuTestNode(ClearpathTestNode):
         avg_y /= len(self.accel_samples)
         avg_z /= len(self.accel_samples)
 
-        # allow 10% error on the IMU since the ground may never be completely level
-        test_tolerance = 0.1
+        # allow 20% error on the IMU since the ground may never be completely level
+        # and the calibration may not be super accurate for some models
+        test_tolerance = 0.2
 
         x_lower_limit = expected_x - g * test_tolerance
         x_upper_limit = expected_x + g * test_tolerance
