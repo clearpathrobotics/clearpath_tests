@@ -147,14 +147,14 @@ class LightTestNode(ClearpathTestNode):
 
 
         # Params
-        self.lights_topic = self.get_parameter_or('lights_topic', f'/{self.namespace}/platform/cmd_lights')
+        self.lights_topic = self.get_parameter_or('lights_topic', f'/{self.namespace}/platform/cmd_lights')  # noqa: E501
         self.publish_rate = self.get_parameter_or('publish_rate', 10)
 
         # Publisher and message
         self.msg = Lights()
         for i in range(self.light_zones):
             self.msg.lights.append(RGB())
-        self.publisher = self.create_publisher(Lights, self.lights_topic, qos_profile_system_default)
+        self.publisher = self.create_publisher(Lights, self.lights_topic, qos_profile_system_default)  # noqa: E501
 
         self.test_in_progress = False
         self.colour = 0
@@ -214,6 +214,17 @@ class LightTestNode(ClearpathTestNode):
 
     def run_ui(self):
         results = self.results
+
+        # kick out if the lights are in an uncontrolled state
+        user_input = self.promptYN("Are all e-stops cleared, the robot's battery charged, and the front lights white & rear lights red?")  # noqa: E501
+        if user_input == 'N':
+            results.append(ClearpathTestResult(
+                None,
+                self.test_name,
+                'Robot in error state; cannot control lights',
+            ))
+            self.test_in_progress = False
+            return
 
         # turn off all lights
         for i in range(self.light_zones):
