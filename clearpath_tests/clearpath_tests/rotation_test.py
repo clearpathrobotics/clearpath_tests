@@ -33,6 +33,7 @@ from clearpath_tests.mobility_test import MobilityTestNode
 from clearpath_tests.test_node import ClearpathTestResult
 
 import math
+from threading import Lock
 
 import rclpy
 from rclpy.duration import Duration
@@ -50,6 +51,8 @@ class RotationTestNode(MobilityTestNode):
 
     def __init__(self, setup_path='/etc/clearpath'):
         super().__init__('Rotation in place', 'rotation_test', setup_path)
+
+        self.orientation_lock = Lock()
 
         self.goal_rotations = self.get_parameter_or('rotations', 2)
         self.max_speed = self.get_parameter_or('max_speed', 0.2)  # slightly more than 10 deg/s
@@ -76,9 +79,9 @@ class RotationTestNode(MobilityTestNode):
                 self.cmd_vel.twist.angular.z = self.max_speed
             super().publish_callback()
 
-            self.get_logger().info(f'Current rotation: {self.current_orientation * 180.0 / math.pi:0.2f} ({self.num_rotations + 1}/{self.goal_rotations})')  # noqa: E501
-
             # count how many rotations we've done and stop when we reach the right number
+            self.orientation_lock.acquire()
+            self.get_logger().info(f'Current rotation: {self.current_orientation * 180.0 / math.pi:0.2f} ({self.num_rotations + 1}/{self.goal_rotations})')  # noqa: E501
             if self.current_orientation >= 0 and self.previous_orientation < 0:
                 # basic debouncing to handle odometry noise
                 # assume we need at least a few seconds for a complete rotation to avoid incrementing
@@ -86,6 +89,7 @@ class RotationTestNode(MobilityTestNode):
                 if (self.get_clock().now() - self.last_rotation_complete_at) > self.min_rotation_duration:  # noqa: E501
                     self.num_rotations += 1
                     self.last_rotation_complete_at = self.get_clock().now()
+            self.orientation_lock.release()
 
     def odom_callback(self, msg):
         super().odom_callback(msg)
@@ -100,22 +104,26 @@ class RotationTestNode(MobilityTestNode):
 
         if self.initial_yaw is None:
             self.initial_yaw = rpy[2]
+            self.orientation_lock.acquire()
             self.previous_orientation = 0.0
             self.current_orientation = 0.0
+            self.orientation_lock.release()
         else:
+            self.orientation_lock.acquire()
             self.previous_orientation = self.current_orientation
             self.current_orientation = rpy[2] - self.initial_yaw
+            self.orientation_lock.release()
 
     def start(self):
         super().start()
-        self.min_rotation_duration = Duration(seconds=3.0)
+        self.min_rotation_duration = Duration(seconds=10.0)
 
     def run_test(self):
         self.test_in_progress = True
         self.last_rotation_complete_at = self.get_clock().now()
         test_name = f'Rotation {self.goal_rotations}x in place'
 
-        user_response = self.promptYN(f"""The robot will rotate {self.goal_rotations} times
+        user_response = self.promptYN("""The robot will rotate on the spot
 The robot must be on the ground, all e-stops cleared, and a 2m safety clearance around the robot.
 Are all these conditions met?""")
         if user_response == 'N':
