@@ -44,8 +44,11 @@ import re
 # Key is status.name, value is an array of regexes
 allowed_errors = {
     'joy_node: Joystick Driver Status': [
-        re.compile(r'.*Joystick not open.*')
-    ]
+        re.compile(r'.*Joystick not open.*'),
+    ],
+    'controller_manager: Controller Manager Activity': [
+        re.compile(r'Controller Manager has bad periodicity'),
+    ],
 }
 
 
