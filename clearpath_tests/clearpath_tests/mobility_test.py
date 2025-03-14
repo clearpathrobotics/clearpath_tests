@@ -163,7 +163,7 @@ class MobilityTestNode(ClearpathTestNode):
         details += '\n#### Average motor current draw during test\n\n'
         avg = self.calculate_average_motor_currents()
         for amps in avg:
-            details += f'* {amps:0.3f}A'
+            details += f'* {amps:0.3f}A\n'
         return details
 
     def odom_callback(self, odom_msg):
