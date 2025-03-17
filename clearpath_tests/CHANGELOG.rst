@@ -2,8 +2,8 @@
 Changelog for package clearpath_tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.2.4 (2025-03-17)
+------------------
 * Reduce the minimum duration for a rotation. Log possible false-positives during the rotation test. Print the calculated duration error for the rotation & drive tests
 * Log the version of clearpath_tests in the report
 * Increase the length of expected lynx messages to 5, cast the length to an integer before comparing it
