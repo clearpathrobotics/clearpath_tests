@@ -135,7 +135,7 @@ class CanbusTestNode(ClearpathTestNode):
                 tokens = re.split(multiple_whitespace, line)
                 interface = tokens[0]
                 msg = tokens[1]
-                length = tokens[2].replace('[', '').replace(']', '')
+                length = int(tokens[2].replace('[', '').replace(']', ''))
                 id = msg[-1]
 
                 if (

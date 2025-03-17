@@ -108,7 +108,8 @@ class TestingNode(Node):
             self.tests_for_platform.append(imu_test.ImuTestNode(0, self.setup_path))
 
             # vcan0 has the 4 motor drivers
-            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 4, self.setup_path))
+            # check for status messages, which are length 5 and more numerous
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 5, self.setup_path))
 
             # vcan1 has batteries, optional e-stop, optional wireless charger
             # so just allow anything here
