@@ -58,6 +58,12 @@ class RotationTestNode(MobilityTestNode):
         self.max_speed = self.get_parameter_or('max_speed', 0.2)  # slightly more than 10 deg/s
         self.error_margin = self.get_parameter_or('error_margin', 10.0)  # +/-10 degrees
 
+        # to debounce noisy odometry data, we assign a minimum duration to one rotation
+        # this doesn't need to be accurate, just an absolute lower-bound on the time
+        # the robot can take to do 1 full rotation at the requested speed
+        # in practice the robot should take longer than this
+        self.min_rotation_duration = Duration(seconds=math.pi / self.max_speed / 2.0)
+
         self.initial_yaw = None
         self.num_rotations = 0
         self.current_orientation = 0.0
@@ -83,12 +89,17 @@ class RotationTestNode(MobilityTestNode):
             self.orientation_lock.acquire()
             self.get_logger().info(f'Current rotation: {self.current_orientation * 180.0 / math.pi:0.2f} ({self.num_rotations + 1}/{self.goal_rotations})')  # noqa: E501
             if self.current_orientation >= 0 and self.previous_orientation < 0:
+                time_taken = self.get_clock().now() - self.last_rotation_complete_at
+
                 # basic debouncing to handle odometry noise
                 # assume we need at least a few seconds for a complete rotation to avoid incrementing
                 # the counter multiple times if there are fluctuations right around 0
-                if (self.get_clock().now() - self.last_rotation_complete_at) > self.min_rotation_duration:  # noqa: E501
+                if time_taken >= self.min_rotation_duration:
                     self.num_rotations += 1
                     self.last_rotation_complete_at = self.get_clock().now()
+                else:
+                    self.get_logger().warning(f'Detected possible rotation completion, but only took {time_taken}. False positive?')
+
             self.orientation_lock.release()
 
     def odom_callback(self, msg):
@@ -116,7 +127,6 @@ class RotationTestNode(MobilityTestNode):
 
     def start(self):
         super().start()
-        self.min_rotation_duration = Duration(seconds=10.0)
 
     def run_test(self):
         self.test_in_progress = True
@@ -164,7 +174,7 @@ Are all these conditions met?""")
                 results.append(ClearpathTestResult(
                     False,
                     f'{test_name} (duration)',
-                    f'Robot took {test_duration.nanoseconds / 1000000000:0.2f}s rotate {self.goal_rotations}x vs {expected_duration.nanoseconds / 1000000000:0.2f}s expected'
+                    f'Robot took {test_duration.nanoseconds / 1000000000:0.2f}s rotate {self.goal_rotations}x vs {expected_duration.nanoseconds / 1000000000:0.2f}s expected (err={time_error:0.4f})'
                 ))
             else:
                 results.append(ClearpathTestResult(

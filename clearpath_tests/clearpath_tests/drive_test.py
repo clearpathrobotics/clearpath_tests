@@ -160,7 +160,7 @@ Are all these conditions met?""")
                 results.append(ClearpathTestResult(
                     False,
                     f'{test_name} (duration)',
-                    f'Robot took {test_duration.nanoseconds / 1000000000:0.2f}s to drive {self.goal_distance}m vs {expected_duration.nanoseconds / 1000000000:0.2f}s expected'
+                    f'Robot took {test_duration.nanoseconds / 1000000000:0.2f}s to drive {self.goal_distance}m vs {expected_duration.nanoseconds / 1000000000:0.2f}s expected (err={time_error:0.4f})'
                 ))
             else:
                 results.append(ClearpathTestResult(
