@@ -27,7 +27,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 import math
-from threading import Lock
 
 from clearpath_generator_common.common import BaseGenerator
 from clearpath_tests.mobility_test import MobilityTestNode
@@ -47,8 +46,6 @@ class RotationTestNode(MobilityTestNode):
 
     def __init__(self, setup_path='/etc/clearpath'):
         super().__init__('Rotation in place', 'rotation_test', setup_path)
-
-        self.orientation_lock = Lock()
 
         self.goal_rotations = self.get_parameter_or('rotations', 2)
         self.max_speed = self.get_parameter_or('max_speed', 0.2)  # slightly more than 10 deg/s
@@ -82,7 +79,6 @@ class RotationTestNode(MobilityTestNode):
             super().publish_callback()
 
             # count how many rotations we've done and stop when we reach the right number
-            self.orientation_lock.acquire()
             if self.current_orientation >= 0 and self.previous_orientation < 0:
                 time_taken = self.get_clock().now() - self.last_rotation_complete_at
 
@@ -94,8 +90,6 @@ class RotationTestNode(MobilityTestNode):
                     self.last_rotation_complete_at = self.get_clock().now()
                 else:
                     self.get_logger().warning(f'Detected possible rotation completion, but only took {time_taken}. False positive?')  # noqa: E501
-
-            self.orientation_lock.release()
 
     def odom_callback(self, msg):
         super().odom_callback(msg)
@@ -110,15 +104,11 @@ class RotationTestNode(MobilityTestNode):
 
         if self.initial_yaw is None:
             self.initial_yaw = rpy[2]
-            self.orientation_lock.acquire()
             self.previous_orientation = 0.0
             self.current_orientation = 0.0
-            self.orientation_lock.release()
         else:
-            self.orientation_lock.acquire()
             self.previous_orientation = self.current_orientation
             self.current_orientation = rpy[2] - self.initial_yaw
-            self.orientation_lock.release()
 
     def start(self):
         super().start()
