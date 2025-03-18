@@ -107,6 +107,7 @@ class RotationTestNode(MobilityTestNode):
                 if time_taken > self.min_rotation_duration:
                     self.num_rotations += 1
                     self.last_rotation_complete_at = self.get_clock().now()
+                    self.get_logger().info(f'Finished rotation {self.num_rotations}')
                 else:
                     self.get_logger().warning(f'Detected possible rotation completion, but only took {time_taken}. False positive?')  # noqa: E501
 
