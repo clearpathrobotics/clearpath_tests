@@ -53,7 +53,7 @@ class MobilityTestNode(ClearpathTestNode):
         self.cmd_vel = TwistStamped()
 
         # The latest odometry received
-        self.latest_odom = Odometry()
+        self.latest_odom = None
 
         # has the current test started?
         self.test_in_progress = False
@@ -167,6 +167,8 @@ class MobilityTestNode(ClearpathTestNode):
         return details
 
     def odom_callback(self, odom_msg):
+        if self.latest_odom is None:
+            self.get_logger().info('Received initial odometry pose')
         self.latest_odom = odom_msg
 
     def publish_callback(self):

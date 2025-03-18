@@ -26,23 +26,18 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
+import math
 
 from clearpath_generator_common.common import BaseGenerator
 
 from clearpath_tests.mobility_test import MobilityTestNode
-from clearpath_tests.test_node import (
-    ConfigurableTransformListener,
-    ClearpathTestResult
-)
+from clearpath_tests.test_node import ClearpathTestResult
 
-from geometry_msgs.msg import PoseStamped, TwistStamped
+from geometry_msgs.msg import Point, TwistStamped
+from nav_msgs.msg import Odometry
 
 import rclpy
 from rclpy.duration import Duration
-
-from tf2_geometry_msgs import do_transform_pose_stamped
-from tf2_ros import TransformException
-from tf2_ros.buffer import Buffer
 
 
 class DriveTestNode(MobilityTestNode):
@@ -60,17 +55,10 @@ class DriveTestNode(MobilityTestNode):
         self.max_speed = self.get_parameter_or('max_speed', 0.1)  # 10cm/s; nice and safe
         self.error_margin = self.get_parameter_or('error_margin', 0.05)  # +/-5%
 
+        self.initial_position = None
         self.current_displacement = None
         self.twist_msg = TwistStamped()
         self.twist_msg.twist.linear.x = self.max_speed
-
-        self.tf_buffer = Buffer()
-        self.tf_listener = ConfigurableTransformListener(
-            self.tf_buffer,
-            self,
-            tf_topic=f'/{self.clearpath_config.get_namespace()}/tf',
-            tf_static_topic=f'/{self.clearpath_config.get_namespace()}/tf_static'
-        )
 
     def publish_callback(self):
         if self.initial_position is None:
@@ -80,40 +68,32 @@ class DriveTestNode(MobilityTestNode):
                 raise(TimeoutError('Timed out waiting for odometry'))
         else:
             if self.current_displacement >= self.goal_distance:
-                self.get_logger().info('Reached goal')
                 self.cmd_vel.twist.linear.x = 0.0
-                self.test_done = True
             else:
                 self.cmd_vel.twist.linear.x = self.max_speed
             super().publish_callback()
 
-            self.get_logger().info(f'Current position: {self.current_displacement:0.2f}m ({self.goal_distance}m)')  # noqa: E501
+            if self.current_displacement >= self.goal_distance:
+                self.get_logger().info('Reached goal')
+                self.test_done = True
+            #else:
+            #    self.get_logger().info(f'Current position: {self.current_displacement:0.2f}m ({self.goal_distance}m)')  # noqa: E501
 
-    def odom_callback(self, msg):
+    def odom_callback(self, msg: Odometry):
         super().odom_callback(msg)
 
-        odom_frame = msg.header.frame_id
-
-        try:
-            transformation = self.tf_buffer.lookup_transform(
-                odom_frame,
-                self.base_link,
-                rclpy.time.Time()
-            )
-        except TransformException as err:
-            self.get_logger().warning(f'TF Lookup failure: {err}')
-            return
-
-        pose_stamped = PoseStamped()
-        pose_stamped.header = msg.header
-        pose_stamped.pose = msg.pose.pose
-        transformed_pose = do_transform_pose_stamped(pose_stamped, transformation)
-
         if self.initial_position is None:
-            self.initial_position = transformed_pose.pose.position
+            self.initial_position = Point()
+            self.initial_position.x = msg.pose.pose.position.x
+            self.initial_position.y = msg.pose.pose.position.y
+            self.initial_position.z = msg.pose.pose.position.z
             self.current_displacement = 0.0
         else:
-            self.current_displacement = abs(transformed_pose.pose.position.x - self.initial_position.x)  # noqa: E501
+            current_position = msg.pose.pose.position
+            self.current_displacement = math.sqrt(
+                math.pow(current_position.x - self.initial_position.x, 2.0) +
+                math.pow(current_position.y - self.initial_position.y, 2.0)
+            )
 
     def run_test(self):
         self.test_in_progress = True
