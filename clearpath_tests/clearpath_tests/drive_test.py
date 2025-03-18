@@ -31,10 +31,7 @@ import math
 from clearpath_generator_common.common import BaseGenerator
 
 from clearpath_tests.mobility_test import MobilityTestNode
-from clearpath_tests.test_node import (
-    ConfigurableTransformListener,
-    ClearpathTestResult
-)
+from clearpath_tests.test_node import ClearpathTestResult
 
 from geometry_msgs.msg import Point, TwistStamped
 from nav_msgs.msg import Odometry
@@ -71,14 +68,16 @@ class DriveTestNode(MobilityTestNode):
                 raise(TimeoutError('Timed out waiting for odometry'))
         else:
             if self.current_displacement >= self.goal_distance:
-                self.get_logger().info('Reached goal')
                 self.cmd_vel.twist.linear.x = 0.0
-                self.test_done = True
             else:
                 self.cmd_vel.twist.linear.x = self.max_speed
             super().publish_callback()
 
-            self.get_logger().info(f'Current position: {self.current_displacement:0.2f}m ({self.goal_distance}m)')  # noqa: E501
+            if self.current_displacement >= self.goal_distance:
+                self.get_logger().info('Reached goal')
+                self.test_done = True
+            else:
+                self.get_logger().info(f'Current position: {self.current_displacement:0.2f}m ({self.goal_distance}m)')  # noqa: E501
 
     def odom_callback(self, msg: Odometry):
         super().odom_callback(msg)
