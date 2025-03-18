@@ -135,8 +135,14 @@ class CanbusTestNode(ClearpathTestNode):
                 interface = tokens[0]
                 msg = tokens[1]
                 length = int(tokens[2].replace('[', '').replace(']', ''))
-                can_id = msg[-2:]  # the last 2 hex digits
-                can_id = int(can_id, 16) & 0b1111111  # CAN ID is the last 7 bits
+
+                # CANopen IDs are the last 7 bits
+                # TODO: some devices (e.g. Puma, Autec, Wiferion) may not use CANopen
+                # and will have their IDs incorrectly identified using this method
+                # Eventually we will likely need to filter messages by ID and do some
+                # distinct processing/filtering to get their IDs
+                can_id = msg[-2:]
+                can_id = int(can_id, 16) & 0b1111111
 
                 if (
                     interface == self.can_interface and
@@ -163,13 +169,14 @@ class CanbusTestNode(ClearpathTestNode):
                 )
 
     def get_test_result_details(self):
-        details = ''
-        details += '\n#### Detected CAN device IDs\n\n'
+        details = '\n#### Detected CANopen device IDs\n\n'
 
         ids = list(self.detected_ids)
         ids.sort()
         for can_id in ids:
             details += f'* {can_id}\n'
+
+        details += '\nDevices that do not use CANopen may be incorrectly identified in the list above'  # noqa: E501
         return details
 
 
