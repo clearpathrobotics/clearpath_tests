@@ -76,8 +76,8 @@ class DriveTestNode(MobilityTestNode):
             if self.current_displacement >= self.goal_distance:
                 self.get_logger().info('Reached goal')
                 self.test_done = True
-            else:
-                self.get_logger().info(f'Current position: {self.current_displacement:0.2f}m ({self.goal_distance}m)')  # noqa: E501
+            #else:
+            #    self.get_logger().info(f'Current position: {self.current_displacement:0.2f}m ({self.goal_distance}m)')  # noqa: E501
 
     def odom_callback(self, msg: Odometry):
         super().odom_callback(msg)

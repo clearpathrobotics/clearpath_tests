@@ -87,7 +87,7 @@ class RotationTestNode(MobilityTestNode):
 
             # count how many rotations we've done and stop when we reach the right number
             self.orientation_lock.acquire()
-            self.get_logger().info(f'Current rotation: {self.current_orientation * 180.0 / math.pi:0.2f} ({self.num_rotations + 1}/{self.goal_rotations})')  # noqa: E501
+            #self.get_logger().info(f'Current rotation: {self.current_orientation * 180.0 / math.pi:0.2f} ({self.num_rotations + 1}/{self.goal_rotations})')  # noqa: E501
             if self.current_orientation >= 0 and self.previous_orientation < 0:
                 time_taken = self.get_clock().now() - self.last_rotation_complete_at
 
