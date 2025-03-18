@@ -2,6 +2,14 @@
 Changelog for package clearpath_tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Move the confirmation about the lights being in the normal state before we call start()
+* Log the hardware ID and firmware version reported by the MCU status topic
+* Move the TF listener implementation to its own file
+* Add tests, refactor & reformat to address errors they caught
+* Contributors: Chris Iverach-Brereton
+
 0.2.6 (2025-03-18)
 ------------------
 * Add an optional flag for the e-stop, remove key-switch test, add wireless e-stop as an optional component
