@@ -190,7 +190,7 @@ class McuTestNode(ClearpathTestNode):
         self.mcu_status = None
 
         def mcu_callback(status):
-            self.mcu_status = None
+            self.mcu_status = status
 
         mcu_sub = self.create_subscription(
             Status,
@@ -201,7 +201,7 @@ class McuTestNode(ClearpathTestNode):
 
         start_at = self.get_clock().now()
         timeout_duration = Duration(seconds=10)
-        while self.get_clock().now() - start_at > timeout_duration and self.mcu_status is None:
+        while self.get_clock().now() - start_at <= timeout_duration and self.mcu_status is None:
             rclpy.spin_once(self)
         mcu_sub.destroy()
 
