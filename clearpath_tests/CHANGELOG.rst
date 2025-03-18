@@ -2,6 +2,11 @@
 Changelog for package clearpath_tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add an optional flag for the e-stop, remove key-switch test, add wireless e-stop as an optional component
+* Contributors: Chris Iverach-Brereton
+
 0.2.5 (2025-03-18)
 ------------------
 * Simplify linear driving test, reduce mobility test logging (`#1 <https://github.com/clearpathrobotics/clearpath_tests/issues/1>`_)
