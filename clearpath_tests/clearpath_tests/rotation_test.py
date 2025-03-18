@@ -27,7 +27,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 import math
-from threading import Lock
 
 from clearpath_generator_common.common import BaseGenerator
 from clearpath_tests.mobility_test import MobilityTestNode
@@ -48,8 +47,6 @@ class RotationTestNode(MobilityTestNode):
     def __init__(self, setup_path='/etc/clearpath'):
         super().__init__('Rotation in place', 'rotation_test', setup_path)
 
-        self.orientation_lock = Lock()
-
         self.goal_rotations = self.get_parameter_or('rotations', 2)
         self.max_speed = self.get_parameter_or('max_speed', 0.2)  # slightly more than 10 deg/s
         self.error_margin = self.get_parameter_or('error_margin', 10.0)  # +/-10 degrees
@@ -62,8 +59,7 @@ class RotationTestNode(MobilityTestNode):
 
         self.initial_yaw = None
         self.num_rotations = 0
-        self.current_orientation = 0.0
-        self.previous_orientation = 0.0
+        self.calculated_angular_displacement = 0.0
         self.test_done = False
 
     def publish_callback(self):
@@ -81,22 +77,6 @@ class RotationTestNode(MobilityTestNode):
                 self.cmd_vel.twist.angular.z = self.max_speed
             super().publish_callback()
 
-            # count how many rotations we've done and stop when we reach the right number
-            self.orientation_lock.acquire()
-            if self.current_orientation >= 0 and self.previous_orientation < 0:
-                time_taken = self.get_clock().now() - self.last_rotation_complete_at
-
-                # basic debouncing to handle odometry noise
-                # assume we need at least a few seconds for a complete rotation to avoid
-                # incrementing the counter multiple times if there are fluctuations around 0
-                if time_taken >= self.min_rotation_duration:
-                    self.num_rotations += 1
-                    self.last_rotation_complete_at = self.get_clock().now()
-                else:
-                    self.get_logger().warning(f'Detected possible rotation completion, but only took {time_taken}. False positive?')  # noqa: E501
-
-            self.orientation_lock.release()
-
     def odom_callback(self, msg):
         super().odom_callback(msg)
 
@@ -109,16 +89,23 @@ class RotationTestNode(MobilityTestNode):
         rpy = euler_from_quaternion(xyzw)
 
         if self.initial_yaw is None:
-            self.initial_yaw = rpy[2]
-            self.orientation_lock.acquire()
-            self.previous_orientation = 0.0
-            self.current_orientation = 0.0
-            self.orientation_lock.release()
+            self.last_rotation_complete_at = self.get_clock().now()
+            self.initial_yaw = rpy[2] % (2 * math.pi)  # keep everything 0-2pi
+            self.previous_yaw = self.initial_yaw
+            self.current_yaw = self.initial_yaw
         else:
-            self.orientation_lock.acquire()
-            self.previous_orientation = self.current_orientation
-            self.current_orientation = rpy[2] - self.initial_yaw
-            self.orientation_lock.release()
+            self.previous_yaw = self.current_yaw
+            self.current_yaw = rpy[2] % (2 * math.pi)
+
+            delta = self.current_yaw - self.previous_yaw + (self.latest_odom.twist.twist.angular.z / 50.0)
+            if delta > 0:
+                self.calculated_angular_displacement += delta
+
+            #self.get_logger().info(f'{self.current_yaw:0.2f} {delta:0.2f} {self.calculated_angular_displacement:0.2f}')
+
+            if self.calculated_angular_displacement >= 4 * math.pi * self.goal_rotations:
+                self.get_logger().info('Finished rotating')
+                self.num_rotations = self.goal_rotations
 
     def start(self):
         super().start()
