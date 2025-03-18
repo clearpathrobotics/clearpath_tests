@@ -2,6 +2,11 @@
 Changelog for package clearpath_tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Simplify linear driving test, reduce mobility test logging (`#1 <https://github.com/clearpathrobotics/clearpath_tests/issues/1>`_)
+* Contributors: Chris Iverach-Brereton
+
 0.2.4 (2025-03-17)
 ------------------
 * Reduce the minimum duration for a rotation. Log possible false-positives during the rotation test. Print the calculated duration error for the rotation & drive tests
