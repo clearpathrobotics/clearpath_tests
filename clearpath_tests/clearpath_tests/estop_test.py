@@ -43,12 +43,13 @@ import threading
 class EstopTestNode(ClearpathTestNode):
     """Ensures e-stop works correctly"""
 
-    def __init__(self, estop_location, setup_path='/etc/clearpath'):
+    def __init__(self, estop_location, setup_path='/etc/clearpath', optional=False):
         super().__init__(
             f'E-Stop ({estop_location})',
             f'estop_test_{estop_location.strip().lower().replace(' ', '_').replace('-', '_')}',
             setup_path
         )
+        self.optional = optional
         self.estop_engaged = None
         self.test_in_progress = False
         self.estop_location = estop_location
@@ -74,6 +75,10 @@ class EstopTestNode(ClearpathTestNode):
         )
 
     def run_test(self):
+        user_input = self.promptYN(f'Does this robot have a {self.estop_location} E-Stop?', default='N')
+        if user_input == 'N':
+            return [ClearpathTestResult(None, self.test_name, 'Skipped; component not installed')]
+
         self.test_in_progress = True
         self.start()
 
