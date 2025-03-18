@@ -26,18 +26,16 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
+import re
 
-from clearpath_config.common.types.platform import Platform
 from clearpath_generator_common.common import BaseGenerator
 from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
 
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
 
 import rclpy
-from rclpy.time import Duration
 from rclpy.qos import qos_profile_system_default
-
-import re
+from rclpy.time import Duration
 
 
 # Allowed warnings & errors that we can silently drop
@@ -53,9 +51,8 @@ allowed_errors = {
 
 
 class DiagnosticTestNode(ClearpathTestNode):
-    """
-    Monitors diagnostic topics to make sure there aren't any warnings
-    """
+    """Monitors diagnostic topics to make sure there aren't any warnings."""
+
     def __init__(self, setup_path='/etc/clearpath'):
         super().__init__('Diagnostics', 'diagnostic_test', setup_path)
         self.test_in_progress = False
@@ -76,7 +73,9 @@ class DiagnosticTestNode(ClearpathTestNode):
             if not allowed:
                 pool[key] = status
                 if not self.test_in_progress:
-                    self.get_logger().warning(f'Diagnostics: {status.name} ({status.level}): {status.message}')
+                    self.get_logger().warning(
+                        f'Diagnostics: {status.name} ({status.level}): {status.message}'
+                    )
             else:
                 self.allowed_errors[key] = status
 
@@ -121,11 +120,23 @@ class DiagnosticTestNode(ClearpathTestNode):
         if len(self.warnings) == 0 and len(self.errors) == 0 and len(self.allowed_errors) == 0:
             results.append(ClearpathTestResult(True, 'Diagnostics', 'No errors, no warnings'))
         elif len(self.warnings) == 0 and len(self.errors) == 0:
-            results.append(ClearpathTestResult(True, 'Diagnostics', f'{len(self.allowed_errors)} allowed errors/warnings'))
+            results.append(ClearpathTestResult(
+                True,
+                'Diagnostics',
+                f'{len(self.allowed_errors)} allowed errors/warnings',
+            ))
         elif len(self.errors) == 0:
-            results.append(ClearpathTestResult(False, 'Diagnostics', f'No errors, {len(self.warnings)} warnings, {len(self.allowed_errors)} allowed errors/warnings'))
+            results.append(ClearpathTestResult(
+                False,
+                'Diagnostics',
+                f'No errors, {len(self.warnings)} warnings, {len(self.allowed_errors)} allowed errors/warnings',  # noqa: E501
+            ))
         else:
-            results.append(ClearpathTestResult(False, 'Diagnostics', f'{len(self.errors)} errors, {len(self.warnings)} warnings, {len(self.allowed_errors)} allowed errors/warnings'))
+            results.append(ClearpathTestResult(
+                False,
+                'Diagnostics',
+                f'{len(self.errors)} errors, {len(self.warnings)} warnings, {len(self.allowed_errors)} allowed errors/warnings',  # noqa: E501
+            ))
 
         return results
 

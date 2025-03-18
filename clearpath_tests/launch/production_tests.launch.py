@@ -33,12 +33,11 @@ from clearpath_config.common.utils.yaml import read_yaml
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
-    GroupAction,
     OpaqueFunction,
 )
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 
-from launch_ros.actions import Node, PushRosNamespace
+from launch_ros.actions import Node
 
 ARGUMENTS = [
     DeclareLaunchArgument(
@@ -48,13 +47,13 @@ ARGUMENTS = [
     )
 ]
 
+
 def launch_setup(context, *args, **kwargs):
     setup_path = LaunchConfiguration('setup_path')
 
     robot_yaml = PathJoinSubstitution(
         [setup_path, 'robot.yaml']
     )
-
 
     # Read robot YAML
     config = read_yaml(robot_yaml.perform(context))

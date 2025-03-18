@@ -42,7 +42,7 @@ from rclpy.duration import Duration
 
 class DriveTestNode(MobilityTestNode):
     """
-    Uses odometry to drive a fixed distance forwards and then stop
+    Use odometry to drive a fixed distance forwards and then stop.
 
     Test assumes that the robot is on the ground, e-stops are cleared, and the area
     is free of obstacles and obstructions.
@@ -65,7 +65,7 @@ class DriveTestNode(MobilityTestNode):
             now = self.get_clock().now()
             if (now - self.start_time) > self.odom_timeout:
                 self.get_logger().error('Timed out waiting for odometry. Terminating test')
-                raise(TimeoutError('Timed out waiting for odometry'))
+                raise TimeoutError('Timed out waiting for odometry')
         else:
             if self.current_displacement >= self.goal_distance:
                 self.cmd_vel.twist.linear.x = 0.0
@@ -76,8 +76,6 @@ class DriveTestNode(MobilityTestNode):
             if self.current_displacement >= self.goal_distance:
                 self.get_logger().info('Reached goal')
                 self.test_done = True
-            #else:
-            #    self.get_logger().info(f'Current position: {self.current_displacement:0.2f}m ({self.goal_distance}m)')  # noqa: E501
 
     def odom_callback(self, msg: Odometry):
         super().odom_callback(msg)
@@ -101,7 +99,7 @@ class DriveTestNode(MobilityTestNode):
 
         user_response = self.promptYN(f"""The robot will drive forwards approximately {self.goal_distance}m
 The robot must be on the ground, all e-stops cleared, and a 2m safety clearance around the robot.
-Are all these conditions met?""")
+Are all these conditions met?""")  # noqa: E501
         if user_response == 'N':
             return [ClearpathTestResult(False, test_name, 'User skipped')]
 
@@ -140,7 +138,7 @@ Are all these conditions met?""")
                 results.append(ClearpathTestResult(
                     False,
                     f'{test_name} (duration)',
-                    f'Robot took {test_duration.nanoseconds / 1000000000:0.2f}s to drive {self.goal_distance}m vs {expected_duration.nanoseconds / 1000000000:0.2f}s expected (err={time_error:0.4f})'
+                    f'Robot took {test_duration.nanoseconds / 1000000000:0.2f}s to drive {self.goal_distance}m vs {expected_duration.nanoseconds / 1000000000:0.2f}s expected (err={time_error:0.4f})'  # noqa: E501
                 ))
             else:
                 results.append(ClearpathTestResult(
@@ -149,9 +147,11 @@ Are all these conditions met?""")
                     None
                 ))
 
-            user_response = self.promptYN(f"""Test complete.
+            user_response = self.promptYN(
+                f"""Test complete.
     Measure the robot's actual displacement.
-    Is it between {self.goal_distance * (1.0 - self.error_margin):0.2f}m and {self.goal_distance * (1.0 + self.error_margin):0.2f}m?""")
+    Is it between {self.goal_distance * (1.0 - self.error_margin):0.2f}m and {self.goal_distance * (1.0 + self.error_margin):0.2f}m?"""  # noqa: E501
+            )
             if user_response == 'N':
                 measured_distance = input('How far did the robot actually drive (in meters)? ')
                 results.append(ClearpathTestResult(
@@ -167,6 +167,7 @@ Are all these conditions met?""")
                 ))
 
         return results
+
 
 def main():
     setup_path = BaseGenerator.get_args()

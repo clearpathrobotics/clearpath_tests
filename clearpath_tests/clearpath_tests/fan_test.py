@@ -34,6 +34,7 @@ from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
 import rclpy
 from rclpy.qos import qos_profile_system_default
 
+
 class FanTestNode(ClearpathTestNode):
 
     def __init__(self, n_fans=4, setup_path='/etc/clearpath'):

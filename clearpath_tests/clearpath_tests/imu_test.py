@@ -26,23 +26,20 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-
-from clearpath_tests.test_node import(
-    ClearpathTestNode,
-    ClearpathTestResult,
-    ConfigurableTransformListener
-)
-from clearpath_generator_common.common import BaseGenerator
-
 import math
 
+from clearpath_generator_common.common import BaseGenerator
+from clearpath_tests.test_node import (
+    ClearpathTestNode,
+    ClearpathTestResult,
+)
+from clearpath_tests.tf import ConfigurableTransformListener
+
+from geometry_msgs.msg import Vector3Stamped
 import rclpy
 from rclpy.duration import Duration
 from rclpy.qos import qos_profile_sensor_data
-
-from geometry_msgs.msg import Vector3Stamped
 from sensor_msgs.msg import Imu
-
 from tf2_geometry_msgs import do_transform_vector3
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
@@ -50,12 +47,12 @@ from tf2_ros.buffer import Buffer
 
 class ImuTestNode(ClearpathTestNode):
     """
-    Checks that the IMU is publishing, EKF is active, and the IMU orientation is sane
+    Check that the IMU is publishing, EKF is active, and the IMU orientation is sane.
 
     Will fail of any of the above is not correct
     """
 
-    def __init__(self, imu_num=0, setup_path='/etc/clearpath' ):
+    def __init__(self, imu_num=0, setup_path='/etc/clearpath'):
         super().__init__(f'IMU (imu_{imu_num})', f'imu_{imu_num}_test', setup_path)
         self.test_in_progress = False
         self.record_data = False
@@ -71,7 +68,7 @@ class ImuTestNode(ClearpathTestNode):
             tf_static_topic=f'/{self.clearpath_config.get_namespace()}/tf_static'
         )
 
-    def imu_raw_callback(self, imu_data:Imu):
+    def imu_raw_callback(self, imu_data: Imu):
         imu_frame = imu_data.header.frame_id
 
         try:
@@ -99,8 +96,8 @@ class ImuTestNode(ClearpathTestNode):
         transformed_gyro = do_transform_vector3(gyro_vector, transformation)
 
         if not self.test_in_progress:
-            self.get_logger().info(f'a ({transformed_accel.vector.x}, {transformed_accel.vector.y}, {transformed_accel.vector.z})')
-            self.get_logger().info(f'g ({transformed_gyro.vector.x}, {transformed_gyro.vector.y}, {transformed_gyro.vector.z})')
+            self.get_logger().info(f'a ({transformed_accel.vector.x}, {transformed_accel.vector.y}, {transformed_accel.vector.z})')  # noqa: E501
+            self.get_logger().info(f'g ({transformed_gyro.vector.x}, {transformed_gyro.vector.y}, {transformed_gyro.vector.z})')  # noqa: E501
             self.get_logger().info('---')
 
         if self.record_data:
@@ -131,7 +128,7 @@ class ImuTestNode(ClearpathTestNode):
 
         results = []
 
-        user_response = self.promptYN('Ensure the robot is on the ground and level.\nOK to proceeed?')
+        user_response = self.promptYN('Ensure the robot is on the ground and level.\nOK to proceeed?')  # noqa: E501
         if not user_response == 'Y':
             results.append(ClearpathTestResult(
                 None,
@@ -144,7 +141,7 @@ class ImuTestNode(ClearpathTestNode):
             self.accel_samples.clear()
             self.gyro_samples.clear()
 
-        user_response = self.promptYN('Raise the REAR of the robot by 20 degrees.\nOK to proceeed?')
+        user_response = self.promptYN('Raise the REAR of the robot by 20 degrees.\nOK to proceeed?')  # noqa: E501
         if not user_response == 'Y':
             results.append(ClearpathTestResult(
                 None,
@@ -157,7 +154,7 @@ class ImuTestNode(ClearpathTestNode):
             self.accel_samples.clear()
             self.gyro_samples.clear()
 
-        user_response = self.promptYN('Raise the LEFT of the robot by 20 degrees.\nOK to proceeed?')
+        user_response = self.promptYN('Raise the LEFT of the robot by 20 degrees.\nOK to proceeed?')  # noqa: E501
         if not user_response == 'Y':
             results.append(ClearpathTestResult(
                 None,
@@ -172,10 +169,9 @@ class ImuTestNode(ClearpathTestNode):
 
         return results
 
-
     def check_gravity(self, label, x_angle=0.0, y_angle=0.0) -> ClearpathTestResult:
         """
-        Analyse the accelerometer data and make sure gravity is properly oriented
+        Analyse the accelerometer data and make sure gravity is properly oriented.
 
         Only x_angle or y_angle should be non-zero.
 
@@ -189,7 +185,7 @@ class ImuTestNode(ClearpathTestNode):
             return ClearpathTestResult(
                 False,
                 f'{self.test_name} ({label})',
-                f'{len(self.accel_samples)} samples collected; is IMU publishing at the right rate?'
+                f'{len(self.accel_samples)} samples collected; is IMU publishing at the right rate?',  # noqa: E501
             )
 
         g = 9.807
@@ -242,13 +238,13 @@ class ImuTestNode(ClearpathTestNode):
             return ClearpathTestResult(
                 True,
                 f'{self.test_name} ({label})',
-                f'Measured gravity vector: ({avg_x:0.2f}, {avg_y:0.2f}, {avg_z:0.2f}) Expected: ({expected_x:0.2f}, {expected_y:0.2f}, {expected_z:0.2f})'
+                f'Measured gravity vector: ({avg_x:0.2f}, {avg_y:0.2f}, {avg_z:0.2f}) Expected: ({expected_x:0.2f}, {expected_y:0.2f}, {expected_z:0.2f})'  # noqa: E501
             )
         else:
             return ClearpathTestResult(
                 False,
                 f'{self.test_name} ({label})',
-                f'Measured gravity vector: ({avg_x:0.2f}, {avg_y:0.2f}, {avg_z:0.2f}) Expected: ({expected_x:0.2f}, {expected_y:0.2f}, {expected_z:0.2f})'
+                f'Measured gravity vector: ({avg_x:0.2f}, {avg_y:0.2f}, {avg_z:0.2f}) Expected: ({expected_x:0.2f}, {expected_y:0.2f}, {expected_z:0.2f})'  # noqa: E501
             )
 
 

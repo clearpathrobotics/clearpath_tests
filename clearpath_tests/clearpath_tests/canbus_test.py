@@ -26,18 +26,17 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
+import re
+import subprocess
 
 from clearpath_generator_common.common import BaseGenerator
 from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
 
 import rclpy
 
-import re
-import subprocess
-
 
 class CanbusTestNode(ClearpathTestNode):
-    """Check the output of candump and count the number if IDs"""
+    """Check the output of candump and count the number if IDs."""
 
     def __init__(
         self,
@@ -61,7 +60,7 @@ class CanbusTestNode(ClearpathTestNode):
             self.can_interface = 'vcan0'
 
         if self.n_devices <= 0:
-            self.get_logger().warning('Permssive number of devices; any number of IDs will be accepted')
+            self.get_logger().warning('Permssive number of devices; any number of IDs will be accepted')  # noqa: E501
             self.n_devices = 0
 
         if self.msg_length <= 0:
@@ -136,13 +135,13 @@ class CanbusTestNode(ClearpathTestNode):
                 interface = tokens[0]
                 msg = tokens[1]
                 length = int(tokens[2].replace('[', '').replace(']', ''))
-                id = msg[-1]
+                can_id = msg[-1]
 
                 if (
                     interface == self.can_interface and
                     (length == self.msg_length or self.msg_length <= 0)
                 ):
-                    can_ids.add(id)
+                    can_ids.add(can_id)
 
             self.detected_ids = can_ids
 
@@ -165,8 +164,8 @@ class CanbusTestNode(ClearpathTestNode):
     def get_test_result_details(self):
         details = ''
         details += '\n#### Detected CAN device IDs\n\n'
-        for id in self.detected_ids:
-            details += f'* {id}\n'
+        for can_id in self.detected_ids:
+            details += f'* {can_id}\n'
         return details
 
 

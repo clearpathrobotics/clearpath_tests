@@ -26,24 +26,20 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-
-from clearpath_generator_common.common import BaseGenerator
-
-from clearpath_tests.mobility_test import MobilityTestNode
-from clearpath_tests.test_node import ClearpathTestResult
-
 import math
 from threading import Lock
 
+from clearpath_generator_common.common import BaseGenerator
+from clearpath_tests.mobility_test import MobilityTestNode
+from clearpath_tests.test_node import ClearpathTestResult
 import rclpy
 from rclpy.duration import Duration
-
 from tf_transformations import euler_from_quaternion
 
 
 class RotationTestNode(MobilityTestNode):
     """
-    Uses odometry to rotate n complete rotations and then stops
+    Use odometry to rotate n complete rotations and then stops.
 
     Test assumes that the robot is on the ground, e-stops are cleared, and the area
     is free of obstacles and obstructions.
@@ -75,7 +71,7 @@ class RotationTestNode(MobilityTestNode):
             now = self.get_clock().now()
             if (now - self.start_time) > self.odom_timeout:
                 self.get_logger().error('Timed out waiting for odometry. Terminating test')
-                raise(TimeoutError('Timed out waiting for odometry'))
+                raise TimeoutError('Timed out waiting for odometry')
         else:
             # publish the desired velocity
             if self.num_rotations >= self.goal_rotations:
@@ -87,18 +83,17 @@ class RotationTestNode(MobilityTestNode):
 
             # count how many rotations we've done and stop when we reach the right number
             self.orientation_lock.acquire()
-            #self.get_logger().info(f'Current rotation: {self.current_orientation * 180.0 / math.pi:0.2f} ({self.num_rotations + 1}/{self.goal_rotations})')  # noqa: E501
             if self.current_orientation >= 0 and self.previous_orientation < 0:
                 time_taken = self.get_clock().now() - self.last_rotation_complete_at
 
                 # basic debouncing to handle odometry noise
-                # assume we need at least a few seconds for a complete rotation to avoid incrementing
-                # the counter multiple times if there are fluctuations right around 0
+                # assume we need at least a few seconds for a complete rotation to avoid
+                # incrementing the counter multiple times if there are fluctuations around 0
                 if time_taken >= self.min_rotation_duration:
                     self.num_rotations += 1
                     self.last_rotation_complete_at = self.get_clock().now()
                 else:
-                    self.get_logger().warning(f'Detected possible rotation completion, but only took {time_taken}. False positive?')
+                    self.get_logger().warning(f'Detected possible rotation completion, but only took {time_taken}. False positive?')  # noqa: E501
 
             self.orientation_lock.release()
 
@@ -158,7 +153,7 @@ Are all these conditions met?""")
         if self.test_error:
             self.get_logger().warning(f'Test aborted due to an error: {self.test_error_msg}')
         else:
-            expected_duration = Duration(seconds = self.goal_rotations * math.pi * 2 / self.max_speed)
+            expected_duration = Duration(seconds=self.goal_rotations * math.pi * 2 / self.max_speed)  # noqa: E501
             test_duration = end_time - start_time
 
             time_error = (
@@ -174,7 +169,7 @@ Are all these conditions met?""")
                 results.append(ClearpathTestResult(
                     False,
                     f'{test_name} (duration)',
-                    f'Robot took {test_duration.nanoseconds / 1000000000:0.2f}s rotate {self.goal_rotations}x vs {expected_duration.nanoseconds / 1000000000:0.2f}s expected (err={time_error:0.4f})'
+                    f'Robot took {test_duration.nanoseconds / 1000000000:0.2f}s rotate {self.goal_rotations}x vs {expected_duration.nanoseconds / 1000000000:0.2f}s expected (err={time_error:0.4f})'  # noqa: E501
                 ))
             else:
                 results.append(ClearpathTestResult(
@@ -201,6 +196,7 @@ Are all these conditions met?""")
                 ))
 
         return results
+
 
 def main():
     setup_path = BaseGenerator.get_args()

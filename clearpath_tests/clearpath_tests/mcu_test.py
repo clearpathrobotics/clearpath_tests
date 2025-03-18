@@ -26,17 +26,20 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-
-from clearpath_config.common.types.platform import Platform
-from clearpath_generator_common.common import BaseGenerator
-from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
-
-import rclpy
-
 import os
 import re
 import subprocess
 import time
+
+from clearpath_config.common.types.platform import Platform
+from clearpath_generator_common.common import BaseGenerator
+from clearpath_platform_msgs.msg import Status
+from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
+
+import rclpy
+from rclpy.qos import qos_profile_sensor_data
+from rclpy.time import Duration
+
 
 MCU_IP = 1
 MCU_SERIAL = 2
@@ -50,12 +53,12 @@ class McuTestNode(ClearpathTestNode):
 
     def __init__(
         self,
-        mode = None,
-        address = None,
+        mode=None,
+        address=None,
         setup_path='/etc/clearpath'
     ):
         """
-        Create the test node
+        Create the test node.
 
         @param mode  One of MCU_IP or MCU_SERIAL indicating how the communication occur
         @param address  Either the IP address or serial interface file for the MCU, depending
@@ -149,11 +152,11 @@ class McuTestNode(ClearpathTestNode):
 
         search_result = search_result.string[search_result.span()[0]:search_result.span()[1]]
         n = int(search_result.split()[0])
-        return n >= N_PINGS /2
+        return n >= (N_PINGS / 2)
 
     def check_serial_exists(self, device):
         """
-        Check that a serial device exists on the system
+        Check that a serial device exists on the system.
 
         Also checks that we have read/write permissions to the device
 
@@ -165,7 +168,7 @@ class McuTestNode(ClearpathTestNode):
 
     def check_serial_permissions(self, device):
         """
-        Check  that we have read/write permissions to the device
+        Check  that we have read/write permissions to the device.
 
         @param device  The serial device handle (e.g. /dev/ttyUSB0)
 
@@ -178,6 +181,35 @@ class McuTestNode(ClearpathTestNode):
             perms_ok = os.access(device, os.R_OK) and os.access(device, os.W_OK)
         return exists and perms_ok
 
+    def get_firmware_version(self):
+        """
+        Get the MCU version and hardware ID.
+
+        @return A tuple of the form (hardware_id, firmware_version)
+        """
+        self.mcu_status = None
+
+        def mcu_callback(status):
+            self.mcu_status = None
+
+        mcu_sub = self.create_subscription(
+            Status,
+            f'{self.namespace}/platform/mcu/status',
+            mcu_callback,
+            qos_profile_sensor_data,
+        )
+
+        start_at = self.get_clock().now()
+        timeout_duration = Duration(seconds=10)
+        while self.get_clock.now() - start_at > timeout_duration and self.mcu_status is None:
+            rclpy.spin_once(self)
+        mcu_sub.destroy()
+
+        if self.mcu_status is None:
+            return (None, None)
+        else:
+            return (self.mcu_status.hardware_id, self.mcu_status.firmware_version)
+
     def start(self):
         while True:
             if self.mode == MCU_IP:
@@ -188,9 +220,9 @@ class McuTestNode(ClearpathTestNode):
             elif self.mode == MCU_SERIAL:
                 if self.check_serial_exists(self.address):
                     if self.check_serial_permissions(self.address):
-                        self.get_logger().info(f'MCU handle {self.address} exists with RW permissions')
+                        self.get_logger().info(f'MCU handle {self.address} exists with RW permissions')  # noqa: E501
                     else:
-                        self.get_logger().warning(f'Invalid permissions for MCU handle {self.address}')
+                        self.get_logger().warning(f'Invalid permissions for MCU handle {self.address}')  # noqa: E501
                 else:
                     self.get_logger().warning(f'MCU handle {self.address} does not exist')
                 time.sleep(5)
@@ -225,10 +257,21 @@ class McuTestNode(ClearpathTestNode):
                     )]
             else:
                 return [ClearpathTestResult(
-                        False,
-                        self.test_name,
-                        f'MCU handle {self.address} does not exist'
-                    )]
+                    False,
+                    self.test_name,
+                    f'MCU handle {self.address} does not exist'
+                )]
+
+    def get_test_result_details(self):
+        (hardware_id, firmware_version) = self.get_firmware_version()
+
+        return f"""
+#### MCU Details
+
+* Hardware ID: {'unknown' if not hardware_id else hardware_id}
+* Version: {'unknown' if not firmware_version else firmware_version}
+
+"""
 
 
 def main():

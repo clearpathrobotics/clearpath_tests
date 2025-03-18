@@ -26,16 +26,15 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
+import threading
 
 from clearpath_config.common.types.platform import Platform
 from clearpath_generator_common.common import BaseGenerator
-from clearpath_platform_msgs.msg import RGB, Lights
+from clearpath_platform_msgs.msg import Lights, RGB
 from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
 
 import rclpy
 from rclpy.qos import qos_profile_system_default
-
-import threading
 
 
 class LightTestNode(ClearpathTestNode):
@@ -144,7 +143,6 @@ class LightTestNode(ClearpathTestNode):
 
             self.top_row = []
             self.bottom_row = []
-
 
         # Params
         self.lights_topic = self.get_parameter_or('lights_topic', f'/{self.namespace}/platform/cmd_lights')  # noqa: E501
@@ -286,7 +284,6 @@ class LightTestNode(ClearpathTestNode):
             results.append(ClearpathTestResult(False, 'All lights white', notes))
         else:
             results.append(ClearpathTestResult(True, 'All lights white', None))
-
 
         # test each corner
         for i in range(self.light_zones):

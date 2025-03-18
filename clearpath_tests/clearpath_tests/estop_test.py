@@ -26,27 +26,25 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
+import threading
 
 from clearpath_generator_common.common import BaseGenerator
 from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
 
+from geometry_msgs.msg import TwistStamped
 import rclpy
 from rclpy.duration import Duration
 from rclpy.qos import qos_profile_sensor_data, qos_profile_system_default
-
-from geometry_msgs.msg import TwistStamped
 from std_msgs.msg import Bool
-
-import threading
 
 
 class EstopTestNode(ClearpathTestNode):
-    """Ensures e-stop works correctly"""
+    """Ensure e-stop works correctly."""
 
     def __init__(self, estop_location, setup_path='/etc/clearpath', optional=False):
         super().__init__(
             f'E-Stop ({estop_location})',
-            f'estop_test_{estop_location.strip().lower().replace(' ', '_').replace('-', '_')}',
+            f'estop_test_{estop_location.strip().lower().replace(" ", "_").replace("-", "_")}',
             setup_path
         )
         self.optional = optional
@@ -75,9 +73,13 @@ class EstopTestNode(ClearpathTestNode):
         )
 
     def run_test(self):
-        user_input = self.promptYN(f'Does this robot have a {self.estop_location} E-Stop?', default='N')
-        if user_input == 'N':
-            return [ClearpathTestResult(None, self.test_name, 'Skipped; component not installed')]
+        if self.optional:
+            user_input = self.promptYN(
+                f'Does this robot have a {self.estop_location} E-Stop?',
+                default='N',
+            )
+            if user_input == 'N':
+                return [ClearpathTestResult(None, self.test_name, 'Skipped; component not installed')]  # noqa: E501
 
         self.test_in_progress = True
         self.start()
@@ -88,7 +90,7 @@ class EstopTestNode(ClearpathTestNode):
             qos_profile_system_default
         )
         self.cmd_vel = TwistStamped()
-        self.cmd_vel_timer = self.create_timer(0.1, self.cmd_vel_timer_callback) # 10Hz
+        self.cmd_vel_timer = self.create_timer(0.1, self.cmd_vel_timer_callback)  # 10Hz
 
         self.results = []
         self.test_done = False
@@ -106,23 +108,25 @@ class EstopTestNode(ClearpathTestNode):
     def run_ui(self):
         results = self.results
 
-        user_input = self.promptYN("""The robot will be commanded to drive forwards at 0.1m/s for 2s multiple
+        user_input = self.promptYN(
+            """The robot will be commanded to drive forwards at 0.1m/s for 2s multiple
 times during this test.
 Ensure the robot is either on blocks with the wheels not on the ground
 or that it is safe for the robot to drive forwards.
-Safe to continue?""")
+Safe to continue?"""
+        )
         if user_input == 'N':
             results.append(ClearpathTestResult(
                 False,
                 self.test_name,
-                'User aborted; unsafe setup'
+                'User aborted; unsafe setup',
             ))
             self.test_done = True
             return
 
         # wait until we know the state of the e-stop
         start_time = self.get_clock().now()
-        timeout = Duration(seconds = 10)
+        timeout = Duration(seconds=10)
         print('Getting e-stop status...')
         while (
             self.estop_engaged is None and
@@ -134,7 +138,7 @@ Safe to continue?""")
             results.append(ClearpathTestResult(
                 False,
                 self.test_name,
-                'Timed out waiting for e-stop state'
+                'Timed out waiting for e-stop state',
             ))
             self.test_done = True
             return
@@ -159,7 +163,11 @@ Safe to continue?""")
         user_input = self.promptYN('Will now command the wheels to turn\nSafe to proceed?')
         if user_input == 'N':
             safe_to_drive = False
-            results.append(None, f'{self.test_name} (wheel rotation)', 'User skipped; unsafe setup')
+            results.append(ClearpathTestResult(
+                None,
+                f'{self.test_name} (wheel rotation)',
+                'User skipped; unsafe setup',
+            ))
         else:
             safe_to_drive = True
             self.command_wheels()
@@ -213,7 +221,7 @@ Safe to continue?""")
 
     def wait_for_estop(self, state, timeout_seconds=10):
         """
-        Wait for the e-stop state to enter the specified state
+        Wait for the e-stop state to enter the specified state.
 
         @param state  The desired state of the e-stop
         @param timeout_seconds  The maximum number of seconds to wait
@@ -222,7 +230,7 @@ Safe to continue?""")
         """
         start_time = self.get_clock().now()
         now = self.get_clock().now()
-        timeout = Duration(seconds = timeout_seconds)
+        timeout = Duration(seconds=timeout_seconds)
         while (
             self.estop_engaged != state and
             (now - start_time) < timeout

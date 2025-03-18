@@ -26,7 +26,6 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-
 """
 This file is the main entrypoint for production tests.
 
@@ -37,10 +36,6 @@ The output file is in markdown format. Markdown files are human-readable, but
 you can also install markdown renderers for Chrome, Firefox, VSCode, and other
 browsers & editors.
 """
-
-import rclpy
-from rclpy.node import Node
-
 from datetime import datetime
 import os
 import subprocess
@@ -48,13 +43,12 @@ import subprocess
 from clearpath_config.clearpath_config import ClearpathConfig
 from clearpath_config.common.types.platform import Platform
 from clearpath_config.common.utils.yaml import read_yaml
-
 from clearpath_tests import (
     canbus_test,
     diagnostic_test,
     drive_test,
     estop_test,
-    fan_test,
+    # blocked waiting for firmware changes -- fan_test,
     imu_test,
     light_test,
     mcu_test,
@@ -65,6 +59,9 @@ from clearpath_tests.test_node import (
     ClearpathTestNode,
     ClearpathTestResult,
 )
+
+import rclpy
+from rclpy.node import Node
 
 
 class TestingNode(Node):
@@ -93,57 +90,62 @@ class TestingNode(Node):
         self.tests_for_platform = []
         if self.platform == Platform.A200:
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear', self.setup_path))
-            self.tests_for_platform.append(estop_test.EstopTestNode('Key Switch', self.setup_path))
         elif self.platform == Platform.A300:
             # TODO
             # temporarily disable the fans while some firmware changes are in-progress
-            #self.tests_for_platform.append(fan_test.FanTestNode(4, self.setup_path))
+            # self.tests_for_platform.append(fan_test.FanTestNode(4, self.setup_path))
             self.tests_for_platform.append(light_test.LightTestNode(4, self.setup_path))
 
             self.tests_for_platform.append(estop_test.EstopTestNode('Front', self.setup_path))
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear', self.setup_path))
-            self.tests_for_platform.append(estop_test.EstopTestNode('Access Panel', self.setup_path))  # rear access hatch should also act as an e-stop
-            self.tests_for_platform.append(estop_test.EstopTestNode('Wireless', self.setup_path, optional=True))
+            self.tests_for_platform.append(
+                # rear access hatch should also act as an e-stop
+                estop_test.EstopTestNode('Access Panel', self.setup_path)
+            )
+            self.tests_for_platform.append(
+                # wireless e-stop is optional on A300
+                estop_test.EstopTestNode('Wireless', self.setup_path, optional=True)
+            )
 
             self.tests_for_platform.append(imu_test.ImuTestNode(0, self.setup_path))
 
             # vcan0 has the 4 motor drivers
             # check for status messages, which are length 5 and more numerous
-            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 5, self.setup_path))
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 5, self.setup_path))  # noqa: E501
 
             # vcan1 has batteries, optional e-stop, optional wireless charger
             # so just allow anything here
-            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan1', 0, 0, self.setup_path))
-        elif(
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan1', 0, 0, self.setup_path))  # noqa: E501
+        elif (
             self.platform == Platform.DD100 or
             self.platform == Platform.DD150
         ):
             self.tests_for_platform.append(light_test.LightTestNode(4, self.setup_path))
-            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 4, self.setup_path))
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 4, self.setup_path))  # noqa: E501
         elif (
             self.platform == Platform.DO100 or
             self.platform == Platform.DO150
         ):
             self.tests_for_platform.append(light_test.LightTestNode(4, self.setup_path))
-            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 2, 4, self.setup_path))
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 2, 4, self.setup_path))  # noqa: E501
         elif self.platform == Platform.GENERIC:
             pass
         elif self.platform == Platform.J100:
             self.tests_for_platform.append(imu_test.ImuTestNode(0, self.setup_path))
         elif self.platform == Platform.R100:
             self.tests_for_platform.append(light_test.LightTestNode(8))
-            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 4, self.setup_path))
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 4, self.setup_path))  # noqa: E501
 
             self.tests_for_platform.append(estop_test.EstopTestNode('Front Left', self.setup_path))
-            self.tests_for_platform.append(estop_test.EstopTestNode('Front Right', self.setup_path))
+            self.tests_for_platform.append(estop_test.EstopTestNode('Front Right', self.setup_path))  # noqa: E501
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear Left', self.setup_path))
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear Right', self.setup_path))
         elif self.platform == Platform.W200:
             self.tests_for_platform.append(light_test.LightTestNode(4))
-            self.tests_for_platform.append(canbus_test.CanbusTestNode('can0', 4, 0, self.setup_path))
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('can0', 4, 0, self.setup_path))  # noqa: E501
 
             self.tests_for_platform.append(estop_test.EstopTestNode('Front Left', self.setup_path))
-            self.tests_for_platform.append(estop_test.EstopTestNode('Front Right', self.setup_path))
+            self.tests_for_platform.append(estop_test.EstopTestNode('Front Right', self.setup_path))  # noqa: E501
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear Left', self.setup_path))
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear Right', self.setup_path))
 
@@ -153,7 +155,7 @@ class TestingNode(Node):
             self.get_logger().warning('$HOME is undefined; using /tmp as default report location')
             default_log_dir = '/tmp'
 
-        timestamp = datetime.now().strftime("%Y%m%d%H%M")
+        timestamp = datetime.now().strftime('%Y%m%d%H%M')
         self.report_file = self.get_parameter_or(
             'report_file',
             os.path.join(
@@ -176,7 +178,7 @@ class TestingNode(Node):
 
     def create_summary(self):
         """
-        Prints the summary table of all tests and appends the same table to the report.
+        Print the summary table of all tests and appends the same table to the report.
 
         Also prints out a one/two line summary of the number of tests passed/failed.
         """
@@ -192,8 +194,8 @@ class TestingNode(Node):
         result_column_width = len('Result')
         message_column_width = len(longest_test_message)
 
-        table_md = f'| {"Test".ljust(test_column_width)} | Result | {"Notes".ljust(message_column_width)} |\n'
-        table_md = table_md + f'|-{"-"*test_column_width}-|-{"-"*result_column_width}-|-{"-"*message_column_width}-|\n'
+        table_md = f'| {"Test".ljust(test_column_width)} | Result | {"Notes".ljust(message_column_width)} |\n'  # noqa: E501
+        table_md = table_md + f'|-{"-"*test_column_width}-|-{"-"*result_column_width}-|-{"-"*message_column_width}-|\n'  # noqa: E501
 
         n_passed = 0
         n_failed = 0
@@ -207,7 +209,7 @@ class TestingNode(Node):
                 pass_fail = 'fail'
                 n_failed += 1
 
-            table_md = table_md + f'| {result.name.ljust(test_column_width)} | {pass_fail.ljust(result_column_width)} | {(result.message if result.message else "").ljust(message_column_width)} |\n'
+            table_md = table_md + f'| {result.name.ljust(test_column_width)} | {pass_fail.ljust(result_column_width)} | {(result.message if result.message else "").ljust(message_column_width)} |\n'   # noqa: E501
 
         with open(self.report_file, 'a') as report:
             report.write('\n## Summary\n')
@@ -247,36 +249,37 @@ Setup path: {self.setup_path}
 Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath_config.get_serial_number()})
 
 ## robot.yaml
-""")
+""")  # noqa: E501
         self.copy_file_contents(self.setup_file, 'yaml')
 
         with open(self.report_file, 'a') as report:
             report.write('\n## Test results\n\n')
 
-    def copy_file_contents(self, path, format=None):
+    def copy_file_contents(self, path, src_formatting=None):
         """
-        Copy the raw contents of a file into a code block
+        Copy the raw contents of a file into a code block.
 
         @param path  The path of the file to copy
-        @param format  Optional code formatting parameter (e.g. python, bash, yaml, xml, ...)
+        @param src_formatting  Optional code formatting parameter
+                               (e.g. python, bash, yaml, xml, ...)
         """
         with open(path, 'r') as setup_file:
             file_contents = setup_file.readlines()
-        self.write_code(file_contents, format)
+        self.write_code(file_contents, src_formatting)
 
-    def write_code(self, code, format=None):
+    def write_code(self, code, src_formatting=None):
         """
-        Add a code block to the report
+        Add a code block to the report.
 
         The code block will always have a newline added before and after it
 
         @param code  Either a string or an array of strings representing the lines of code
-        @param format  The markdown-compatible language (e.g. python, bash, yaml, xml, ...)
+        @param src_formatting  The markdown-compatible language
+                               (e.g. python, bash, yaml, xml, ...)
         """
-
         with open(self.report_file, 'a') as report:
-            if format:
-                report.write(f'\n```{format}')
+            if src_formatting:
+                report.write(f'\n```{src_formatting}')
             else:
                 report.write('\n```')
 
@@ -298,7 +301,7 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
 
     def log_result(self, test_result: ClearpathTestResult):
         """
-        Log the results of a test to the report
+        Log the results of a test to the report.
 
         @param test_result  The result we want to log
         """
@@ -309,7 +312,7 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
 
     def prompt_tests(self):
         """
-        Ask the user to select what test(s) to run
+        Ask the user to select what test(s) to run.
 
         Returns the array of tests the user selected
         """
@@ -332,7 +335,7 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
             tests_in_order.append(test)
 
         # Clearpath Tests -- https://patorjk.com/software/taag/#p=display&v=0&f=Small
-        title="""
+        title = """
    ___ _                         _   _      _____       _
   / __| |___ __ _ _ _ _ __  __ _| |_| |_   |_   _|__ __| |_ ___
  | (__| / -_) _` | '_| '_ \\/ _` |  _| ' \\    | |/ -_|_-<  _(_-<
@@ -364,10 +367,9 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
                 tests_to_run.append(tests_in_order[i])
             return tests_to_run
 
-
     def run_tests(self):
         """
-        Go through the tests one at a time, logging the results as we go
+        Go through the tests one at a time, logging the results as we go.
 
         The exact tests executed depends on the configured platform
         """
@@ -381,7 +383,9 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
 
         n = 1
         for node in tests_to_run:
-            self.get_logger().info(f'Starting ({node.test_name}) (test {n} of {len(tests_to_run)})')
+            self.get_logger().info(
+                f'Starting ({node.test_name}) (test {n} of {len(tests_to_run)})'
+            )
             user_input = node.promptYN(f'Ready to run test {node.test_name}?')
             details = None
             results = []
@@ -414,7 +418,7 @@ Platform (serial): {self.clearpath_config.get_platform_model()} ({self.clearpath
         self.create_summary()
 
 
-def start_bag_recording(test_node:TestingNode):
+def start_bag_recording(test_node: TestingNode):
     FOUR_GiB = 4 * 2**30
 
     p = subprocess.Popen([
@@ -463,6 +467,7 @@ def main(args=None):
         if bag_proc is not None:
             bag_proc.terminate()
     rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()

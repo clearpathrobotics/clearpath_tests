@@ -26,27 +26,24 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-
-
 from clearpath_config.common.types.platform import Platform
-
-from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
-
 from clearpath_motor_msgs.msg import (
     LynxMultiFeedback,
     LynxSystemProtection,
     PumaMultiFeedback,
 )
+from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
+
 from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
-
 from rclpy.duration import Duration
-from rclpy.qos import qos_profile_system_default, qos_profile_sensor_data
+from rclpy.qos import qos_profile_sensor_data, qos_profile_system_default
+
 
 class MobilityTestNode(ClearpathTestNode):
-    """Generic class for all tests that involve driving the robot with odometry feedback"""
+    """Generic class for all tests that involve driving the robot with odometry feedback."""
 
-    def __init__(self, test_name, node_name, setup_path = "/etc/clearpath"):
+    def __init__(self, test_name, node_name, setup_path='/etc/clearpath'):
         super().__init__(test_name, node_name, setup_path)
 
         # The velocity command to output
@@ -127,7 +124,7 @@ class MobilityTestNode(ClearpathTestNode):
                 qos_profile_sensor_data,
             )
 
-    def on_puma_status(self, puma_status:PumaMultiFeedback):
+    def on_puma_status(self, puma_status: PumaMultiFeedback):
         if not self.test_in_progress or self.test_error or self.test_done:
             return
 
@@ -136,7 +133,7 @@ class MobilityTestNode(ClearpathTestNode):
             currents.append(driver.current)
         self.motor_currents.append(currents)
 
-    def on_lynx_status(self, lynx_status:LynxMultiFeedback):
+    def on_lynx_status(self, lynx_status: LynxMultiFeedback):
         if not self.test_in_progress or self.test_error or self.test_done:
             return
 
@@ -175,7 +172,7 @@ class MobilityTestNode(ClearpathTestNode):
         self.cmd_vel.header.stamp = self.get_clock().now().to_msg()
         self.publisher.publish(self.cmd_vel)
 
-    def lynx_callback(self, lynx_status:LynxSystemProtection):
+    def lynx_callback(self, lynx_status: LynxSystemProtection):
         if not self.test_in_progress or self.test_done or self.test_error:
             # kick out if we're not running the tests
             return

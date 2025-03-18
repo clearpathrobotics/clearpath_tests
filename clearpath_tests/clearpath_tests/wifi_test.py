@@ -26,17 +26,14 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-
-from clearpath_generator_common.common import BaseGenerator
-from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
-
 import os
 import re
 import subprocess
 import time
 
+from clearpath_generator_common.common import BaseGenerator
+from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
 import rclpy
-
 from wireless_msgs.msg import Connection
 
 
