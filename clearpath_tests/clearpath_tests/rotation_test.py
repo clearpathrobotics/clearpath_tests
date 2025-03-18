@@ -78,19 +78,6 @@ class RotationTestNode(MobilityTestNode):
                 self.cmd_vel.twist.angular.z = self.max_speed
             super().publish_callback()
 
-            # count how many rotations we've done and stop when we reach the right number
-            if self.current_orientation >= 0 and self.previous_orientation < 0:
-                time_taken = self.get_clock().now() - self.last_rotation_complete_at
-
-                # basic debouncing to handle odometry noise
-                # assume we need at least a few seconds for a complete rotation to avoid
-                # incrementing the counter multiple times if there are fluctuations around 0
-                if time_taken >= self.min_rotation_duration:
-                    self.num_rotations += 1
-                    self.last_rotation_complete_at = self.get_clock().now()
-                else:
-                    self.get_logger().warning(f'Detected possible rotation completion, but only took {time_taken}. False positive?')  # noqa: E501
-
     def odom_callback(self, msg):
         super().odom_callback(msg)
 
@@ -103,12 +90,25 @@ class RotationTestNode(MobilityTestNode):
         rpy = euler_from_quaternion(xyzw)
 
         if self.initial_yaw is None:
+            self.last_rotation_complete_at = self.get_clock().now()
             self.initial_yaw = rpy[2]
             self.previous_orientation = 0.0
             self.current_orientation = 0.0
         else:
             self.previous_orientation = self.current_orientation
             self.current_orientation = rpy[2] - self.initial_yaw
+            now = self.get_clock().now()
+            time_taken = now - self.last_rotation_complete_at
+
+            if (
+                self.current_orientation >= 0
+                and self.previous_orientation < 0
+                and time_taken > self.min_rotation_duration
+            ):
+                self.num_rotations += 1
+                self.last_rotation_complete_at = self.get_clock().now()
+            else:
+                self.get_logger().warning(f'Detected possible rotation completion, but only took {time_taken}. False positive?')  # noqa: E501
 
     def start(self):
         super().start()
