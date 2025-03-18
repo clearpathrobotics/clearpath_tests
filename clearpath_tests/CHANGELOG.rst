@@ -2,8 +2,8 @@
 Changelog for package clearpath_tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.2.6 (2025-03-18)
+------------------
 * Add an optional flag for the e-stop, remove key-switch test, add wireless e-stop as an optional component
 * Contributors: Chris Iverach-Brereton
 
