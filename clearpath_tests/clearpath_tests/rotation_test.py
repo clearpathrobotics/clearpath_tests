@@ -97,11 +97,9 @@ class RotationTestNode(MobilityTestNode):
             self.previous_yaw = self.current_yaw
             self.current_yaw = rpy[2] % (2 * math.pi)
 
-            delta = self.current_yaw - self.previous_yaw + (self.latest_odom.twist.twist.angular.z / 50.0)
+            delta = self.current_yaw - self.previous_yaw + (self.latest_odom.twist.twist.angular.z / 50.0)  # noqa: E501
             if delta > 0:
                 self.calculated_angular_displacement += delta
-
-            #self.get_logger().info(f'{self.current_yaw:0.2f} {delta:0.2f} {self.calculated_angular_displacement:0.2f}')
 
             if self.calculated_angular_displacement >= 4 * math.pi * self.goal_rotations:
                 self.get_logger().info('Finished rotating')
