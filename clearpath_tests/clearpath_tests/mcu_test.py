@@ -194,7 +194,7 @@ class McuTestNode(ClearpathTestNode):
 
         mcu_sub = self.create_subscription(
             Status,
-            f'{self.namespace}/platform/mcu/status',
+            f'/{self.namespace}/platform/mcu/status',
             mcu_callback,
             qos_profile_sensor_data,
         )
