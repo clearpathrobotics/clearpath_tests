@@ -59,8 +59,7 @@ class RotationTestNode(MobilityTestNode):
 
         self.initial_yaw = None
         self.num_rotations = 0
-        self.current_orientation = 0.0
-        self.previous_orientation = 0.0
+        self.calculated_angular_displacement = 0.0
         self.test_done = False
 
     def publish_callback(self):
@@ -91,25 +90,22 @@ class RotationTestNode(MobilityTestNode):
 
         if self.initial_yaw is None:
             self.last_rotation_complete_at = self.get_clock().now()
-            self.initial_yaw = rpy[2]
-            self.previous_orientation = 0.0
-            self.current_orientation = 0.0
+            self.initial_yaw = rpy[2] % (2 * math.pi)  # keep everything 0-2pi
+            self.previous_yaw = self.initial_yaw
+            self.current_yaw = self.initial_yaw
         else:
-            self.previous_orientation = self.current_orientation
-            self.current_orientation = rpy[2]
-            now = self.get_clock().now()
-            time_taken = now - self.last_rotation_complete_at
+            self.previous_yaw = self.current_yaw
+            self.current_yaw = rpy[2] % (2 * math.pi)
 
-            if (
-                self.current_orientation >= 0
-                and self.previous_orientation < 0
-            ):
-                if time_taken > self.min_rotation_duration:
-                    self.num_rotations += 1
-                    self.last_rotation_complete_at = self.get_clock().now()
-                    self.get_logger().info(f'Finished rotation {self.num_rotations}')
-                else:
-                    self.get_logger().warning(f'Detected possible rotation completion, but only took {time_taken}. False positive?')  # noqa: E501
+            delta = self.current_yaw - self.previous_yaw + (self.latest_odom.twist.twist.angular.z / 50.0)
+            if delta > 0:
+                self.calculated_angular_displacement += delta
+
+            #self.get_logger().info(f'{self.current_yaw:0.2f} {delta:0.2f} {self.calculated_angular_displacement:0.2f}')
+
+            if self.calculated_angular_displacement >= 4 * math.pi * self.goal_rotations:
+                self.get_logger().info('Finished rotating')
+                self.num_rotations = self.goal_rotations
 
     def start(self):
         super().start()
