@@ -35,7 +35,7 @@ package_name = 'clearpath_tests'
 
 setup(
     name=package_name,
-    version='0.2.8',
+    version='0.2.9',
     packages=find_packages(exclude=['test']),
     data_files=[
         ('share/ament_index/resource_index/packages',

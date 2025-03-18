@@ -2,8 +2,8 @@
 Changelog for package clearpath_tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.2.9 (2025-03-18)
+------------------
 * Rewrite rotation test (`#2 <https://github.com/clearpathrobotics/clearpath_tests/issues/2>`_)
   * Overhaul the logic of the rotation to use an accumulator instead of relying on the latest odom data. Factor in the rate of the EKF + the odometry twist instead of just looking at positional data. On 00005 we're still overshooting slightly, but it's now within the margin of error
 * Append the can interface to the node name to suppress duplicate node name warning
