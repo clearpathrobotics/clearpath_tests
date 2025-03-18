@@ -2,8 +2,8 @@
 Changelog for package clearpath_tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.2.8 (2025-03-18)
+------------------
 * Use the last 7 bits for the CAN ID, sort the IDs in the final report
 * Note that the IDs are CANopen, and could be incorrect for other devices.
 * Contributors: Chris Iverach-Brereton
