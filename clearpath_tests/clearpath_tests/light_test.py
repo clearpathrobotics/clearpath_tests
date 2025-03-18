@@ -198,6 +198,16 @@ class LightTestNode(ClearpathTestNode):
         self.publish_timer = self.create_timer(1 / self.publish_rate, self.publish_callback)
 
     def run_test(self):
+        # kick out if the lights are in an uncontrolled state
+        user_input = self.promptYN("Are all e-stops cleared, the robot's battery charged, and the front lights white & rear lights red?")  # noqa: E501
+        if user_input == 'N':
+            self.results = [ClearpathTestResult(
+                None,
+                self.test_name,
+                'Robot in error state; cannot control lights',
+            )]
+            return self.results
+
         self.results = []
         self.test_in_progress = True
         self.start()
@@ -212,17 +222,6 @@ class LightTestNode(ClearpathTestNode):
 
     def run_ui(self):
         results = self.results
-
-        # kick out if the lights are in an uncontrolled state
-        user_input = self.promptYN("Are all e-stops cleared, the robot's battery charged, and the front lights white & rear lights red?")  # noqa: E501
-        if user_input == 'N':
-            results.append(ClearpathTestResult(
-                None,
-                self.test_name,
-                'Robot in error state; cannot control lights',
-            ))
-            self.test_in_progress = False
-            return
 
         # turn off all lights
         for i in range(self.light_zones):
