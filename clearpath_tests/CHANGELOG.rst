@@ -2,8 +2,8 @@
 Changelog for package clearpath_tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.2.7 (2025-03-18)
+------------------
 * Move the confirmation about the lights being in the normal state before we call start()
 * Log the hardware ID and firmware version reported by the MCU status topic
 * Move the TF listener implementation to its own file
