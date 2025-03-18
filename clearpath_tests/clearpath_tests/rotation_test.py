@@ -96,7 +96,7 @@ class RotationTestNode(MobilityTestNode):
             self.current_orientation = 0.0
         else:
             self.previous_orientation = self.current_orientation
-            self.current_orientation = rpy[2] - self.initial_yaw
+            self.current_orientation = rpy[2]
             now = self.get_clock().now()
             time_taken = now - self.last_rotation_complete_at
 
