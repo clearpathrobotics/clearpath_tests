@@ -47,7 +47,7 @@ class CanbusTestNode(ClearpathTestNode):
     ):
         super().__init__(
             'CAN',
-            'canbus_test',
+            f'canbus_test_{can_interface}',
             setup_path
         )
 
