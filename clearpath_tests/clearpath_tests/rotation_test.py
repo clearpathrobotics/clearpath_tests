@@ -103,12 +103,12 @@ class RotationTestNode(MobilityTestNode):
             if (
                 self.current_orientation >= 0
                 and self.previous_orientation < 0
-                and time_taken > self.min_rotation_duration
             ):
-                self.num_rotations += 1
-                self.last_rotation_complete_at = self.get_clock().now()
-            else:
-                self.get_logger().warning(f'Detected possible rotation completion, but only took {time_taken}. False positive?')  # noqa: E501
+                if time_taken > self.min_rotation_duration:
+                    self.num_rotations += 1
+                    self.last_rotation_complete_at = self.get_clock().now()
+                else:
+                    self.get_logger().warning(f'Detected possible rotation completion, but only took {time_taken}. False positive?')  # noqa: E501
 
     def start(self):
         super().start()
