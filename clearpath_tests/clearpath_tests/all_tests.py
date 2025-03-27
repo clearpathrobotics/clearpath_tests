@@ -48,11 +48,15 @@ from clearpath_tests import (
     diagnostic_test,
     drive_test,
     estop_test,
-    # blocked waiting for firmware changes -- fan_test,
+    # blocked waiting for firmware changes
+    # fan_test,
     imu_test,
     light_test,
     mcu_test,
-    rotation_test,
+    # disabled for now as its accuracy isn't up to par and it
+    # frequently causes the motors to self-throttle on high-traction
+    # surfaces
+    # rotation_test,
     wifi_test,
 )
 from clearpath_tests.test_node import (
@@ -82,7 +86,7 @@ class TestingNode(Node):
         ]
 
         self.driving_tests = [
-            rotation_test.RotationTestNode(self.setup_path),
+            # rotation_test.RotationTestNode(self.setup_path),
             drive_test.DriveTestNode(self.setup_path),
         ]
 
