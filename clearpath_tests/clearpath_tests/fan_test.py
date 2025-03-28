@@ -26,7 +26,6 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-import subprocess
 
 from clearpath_generator_common.common import BaseGenerator
 from clearpath_platform_msgs.msg import Fans
