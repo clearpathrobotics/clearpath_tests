@@ -43,33 +43,11 @@ class FanTestNode(ClearpathTestNode):
 
         # Params
         self.n_fans = self.get_parameter_or('num_fans', n_fans)
-        self.fans_topic = self.get_parameter_or('fans_topic', 'platform/mcu/_cmd_fans')
-        self.fans_topic_alternate = self.get_parameter_or('fans_topic', 'platform/mcu/cmd_fans')
+        self.fans_topic = self.get_parameter_or('fans_topic', 'platform/mcu/cmd_fans')
         self.publish_rate = self.get_parameter_or('publish_rate', 2)
 
-        fans_topic = self.decide_fans_topic()
-        self.publisher = self.create_publisher(Fans, fans_topic, qos_profile_system_default)
+        self.publisher = self.create_publisher(Fans, self.fans_topic, qos_profile_system_default)
         self.value = 255
-
-    def decide_fans_topic(self):
-        """
-        Check `ros2 topic list` and choose the appropriate cmd_fans topic.
-
-        If `platform/mcu/cmd_fans` exists, use it. Otherwise use the hidden topic
-
-        :return: The chosen topic
-        """
-        topic_list = subprocess.Popen(
-            ['ros2', 'topic', 'list'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        (stdout, _) = topic_list.communicate()
-        stdout = stdout.decode()
-        for topic in stdout.split('\n'):
-            if topic.endswith(self.fans_topic_alternate):
-                return self.fans_topic_alternate
-        return self.fans_topic
 
     def publish_callback(self):
         # Define the message to be sent
