@@ -48,17 +48,29 @@ class DriveTestNode(MobilityTestNode):
     is free of obstacles and obstructions.
     """
 
-    def __init__(self, setup_path='/etc/clearpath'):
-        super().__init__('Drive Fixed Distance', 'drive_test', setup_path)
+    def __init__(
+        self,
+        setup_path='/etc/clearpath',
+        direction='Forwards',
+        default_speed_x=0.1,  # 10cm/s; nice and safe
+        default_speed_y=0.0,
+        ):
+        super().__init__(
+            f'Drive Fixed Distance ({direction})',
+            f'drive_test_{direction.lower()}',
+            setup_path,
+        )
 
         self.goal_distance = self.get_parameter_or('distance', 5.0)
-        self.max_speed = self.get_parameter_or('max_speed', 0.1)  # 10cm/s; nice and safe
+        self.max_speed_x = self.get_parameter_or('max_speed_x', default_speed_x)
+        self.max_speed_y = self.get_parameter_or('max_speed_y', default_speed_y)
         self.error_margin = self.get_parameter_or('error_margin', 0.05)  # +/-5%
 
         self.initial_position = None
         self.current_displacement = None
         self.twist_msg = TwistStamped()
-        self.twist_msg.twist.linear.x = self.max_speed
+        self.twist_msg.twist.linear.x = self.max_speed_x
+        self.twist_msg.twist.linear.y = self.max_speed_y
 
     def publish_callback(self):
         if self.initial_position is None:
@@ -69,8 +81,10 @@ class DriveTestNode(MobilityTestNode):
         else:
             if self.current_displacement >= self.goal_distance:
                 self.cmd_vel.twist.linear.x = 0.0
+                self.cmd_vel.twist.linear.y = 0.0
             else:
-                self.cmd_vel.twist.linear.x = self.max_speed
+                self.cmd_vel.twist.linear.x = self.max_speed_x
+                self.cmd_vel.twist.linear.y = self.max_speed_y
             super().publish_callback()
 
             if self.current_displacement >= self.goal_distance:
@@ -122,7 +136,10 @@ Are all these conditions met?""")  # noqa: E501
         if self.test_error:
             self.get_logger().warning(f'Test aborted due to an error: {self.test_error_msg}')
         else:
-            expected_duration = Duration(seconds=self.goal_distance / self.max_speed)
+            expected_duration = Duration(
+                seconds=self.goal_distance /
+                math.sqrt(self.max_speed_x ** 2 + self.max_speed_y ** 2)
+            )
             test_duration = end_time - start_time
 
             time_error = (

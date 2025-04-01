@@ -86,7 +86,11 @@ class TestingNode(Node):
 
         self.driving_tests = [
             # rotation_test.RotationTestNode(self.setup_path),
-            drive_test.DriveTestNode(self.setup_path),
+            drive_test.DriveTestNode(
+                setup_path=self.setup_path,
+                default_speed_x=0.1,
+                direction='Forwards',
+            ),
         ]
 
         # Add any platform-specific tests here
@@ -129,6 +133,15 @@ class TestingNode(Node):
         ):
             self.tests_for_platform.append(light_test.LightTestNode(4, self.setup_path))
             self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 2, 4, self.setup_path))  # noqa: E501
+
+            self.driving_tests.append(
+                drive_test.DriveTestNode(
+                    setup_path=self.setup_path,
+                    default_speed_x=0.0,
+                    default_speed_y=0.1,
+                    direction='Left',
+                )
+            )
         elif self.platform == Platform.GENERIC:
             pass
         elif self.platform == Platform.J100:
@@ -141,6 +154,15 @@ class TestingNode(Node):
             self.tests_for_platform.append(estop_test.EstopTestNode('Front Right', self.setup_path))  # noqa: E501
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear Left', self.setup_path))
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear Right', self.setup_path))
+
+            self.driving_tests.append(
+                drive_test.DriveTestNode(
+                    setup_path=self.setup_path,
+                    default_speed_x=0.0,
+                    default_speed_y=0.1,
+                    direction='Left',
+                )
+            )
         elif self.platform == Platform.W200:
             self.tests_for_platform.append(light_test.LightTestNode(4))
             self.tests_for_platform.append(canbus_test.CanbusTestNode('can0', 4, 0, self.setup_path))  # noqa: E501
