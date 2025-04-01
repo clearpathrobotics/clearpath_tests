@@ -48,8 +48,7 @@ from clearpath_tests import (
     diagnostic_test,
     drive_test,
     estop_test,
-    # blocked waiting for firmware changes
-    # fan_test,
+    fan_test,
     imu_test,
     light_test,
     mcu_test,
@@ -95,9 +94,7 @@ class TestingNode(Node):
         if self.platform == Platform.A200:
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear', self.setup_path))
         elif self.platform == Platform.A300:
-            # TODO
-            # temporarily disable the fans while some firmware changes are in-progress
-            # self.tests_for_platform.append(fan_test.FanTestNode(4, self.setup_path))
+            self.tests_for_platform.append(fan_test.FanTestNode(4, self.setup_path))
             self.tests_for_platform.append(light_test.LightTestNode(4, self.setup_path))
 
             self.tests_for_platform.append(estop_test.EstopTestNode('Front', self.setup_path))
