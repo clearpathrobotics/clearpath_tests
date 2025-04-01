@@ -59,7 +59,7 @@ class FanTestNode(ClearpathTestNode):
 
     def check_firmware_version(self):
         """
-        Check the firmware version; it must be 2.3+ for this test to work
+        Check the firmware version; it must be 2.3+ for this test to work.
 
         :return: A tuple of the form (version, sufficient)
         """

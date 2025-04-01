@@ -54,7 +54,7 @@ class DriveTestNode(MobilityTestNode):
         direction='Forwards',
         default_speed_x=0.1,  # 10cm/s; nice and safe
         default_speed_y=0.0,
-        ):
+    ):
         super().__init__(
             f'Drive Fixed Distance ({direction})',
             f'drive_test_{direction.lower()}',
