@@ -2,8 +2,8 @@
 Changelog for package clearpath_tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.3.0 (2025-04-03)
+------------------
 * Allow symlinks to the device handle
 * Fix serial MCU tests
 * Ensure the firmware is 2.3 or higher to allow fan control; otherwise just skip the fan test
