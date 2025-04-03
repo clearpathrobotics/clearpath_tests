@@ -2,6 +2,16 @@
 Changelog for package clearpath_tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Allow symlinks to the device handle
+* Fix serial MCU tests
+* Ensure the firmware is 2.3 or higher to allow fan control; otherwise just skip the fan test
+* Add support for lateral driving test for omni platforms (`#5 <https://github.com/clearpathrobotics/clearpath_tests/issues/5>`_)
+* Re-enable the fan tests (`#4 <https://github.com/clearpathrobotics/clearpath_tests/issues/4>`_)
+* Remove rotation test (`#3 <https://github.com/clearpathrobotics/clearpath_tests/issues/3>`_)
+* Contributors: Chris Iverach-Brereton
+
 0.2.9 (2025-03-18)
 ------------------
 * Rewrite rotation test (`#2 <https://github.com/clearpathrobotics/clearpath_tests/issues/2>`_)
