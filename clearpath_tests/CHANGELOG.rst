@@ -2,8 +2,8 @@
 Changelog for package clearpath_tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.3.1 (2025-04-10)
+------------------
 * Fix a bug where the e-stop test could cause the test node to crash
 * Add a 2s delay between clearing the e-stop and moving the wheels to allow CAN reconnections as needed
 * Remove CAN device ID count for platforms that don't use CANopen
