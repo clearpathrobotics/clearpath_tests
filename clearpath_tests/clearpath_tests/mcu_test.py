@@ -97,7 +97,7 @@ class McuTestNode(ClearpathTestNode):
             if self.platform == Platform.A200:
                 address = '/dev/clearpath/prolific'
             elif self.platform == Platform.J100:
-                address = '/dev/jackal'  # TODO: changed in humble?
+                address = '/dev/clearpath/j100'
             elif (
                 self.platform == Platform.A300 or
                 self.platform == Platform.DD100 or
