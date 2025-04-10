@@ -29,6 +29,7 @@
 import os
 
 from clearpath_config.clearpath_config import ClearpathConfig
+import rclpy
 from rclpy.node import Node
 
 
@@ -57,6 +58,13 @@ class ClearpathTestNode(Node):
 
     def __str__(self):
         return self.test_name
+
+    def try_spin_once(self):
+        """Try spinning once"""
+        try:
+            rclpy.spin_once(self)
+        except ValueError as err:
+            self.get_logger().warning(f'Spin failure: {err}')
 
     def run_test(self):
         """

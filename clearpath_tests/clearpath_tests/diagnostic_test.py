@@ -115,7 +115,7 @@ class DiagnosticTestNode(ClearpathTestNode):
 
         self.get_logger().info('Collecting 30 seconds of diagnostic data...')
         while self.get_clock().now() < end_time:
-            rclpy.spin_once(self)
+            self.try_spin_once()
 
         if len(self.warnings) == 0 and len(self.errors) == 0 and len(self.allowed_errors) == 0:
             results.append(ClearpathTestResult(True, 'Diagnostics', 'No errors, no warnings'))

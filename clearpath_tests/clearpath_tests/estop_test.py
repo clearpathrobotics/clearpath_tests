@@ -97,7 +97,7 @@ class EstopTestNode(ClearpathTestNode):
         ui_thread = threading.Thread(target=self.run_ui)
         ui_thread.start()
         while not self.test_done:
-            rclpy.spin_once(self)
+            self.try_spin_once()
         ui_thread.join()
         return self.results
 
@@ -132,7 +132,7 @@ Safe to continue?"""
             self.estop_engaged is None and
             (self.get_clock().now() - start_time) < timeout
         ):
-            rclpy.spin_once(self)
+            self.try_spin_once()
 
         if self.estop_engaged is None:
             results.append(ClearpathTestResult(
