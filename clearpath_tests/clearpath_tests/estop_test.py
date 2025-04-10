@@ -26,7 +26,6 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-import threading
 import time
 
 from clearpath_generator_common.common import BaseGenerator
@@ -95,11 +94,8 @@ class EstopTestNode(ClearpathTestNode):
 
         self.results = []
         self.test_done = False
-        ui_thread = threading.Thread(target=self.run_ui)
-        ui_thread.start()
-        while not self.test_done:
-            rclpy.spin_once(self)
-        ui_thread.join()
+
+        self.run_ui()
         return self.results
 
     def cmd_vel_timer_callback(self):
