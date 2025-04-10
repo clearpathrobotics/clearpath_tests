@@ -126,13 +126,17 @@ class TestingNode(Node):
             self.platform == Platform.DD150
         ):
             self.tests_for_platform.append(light_test.LightTestNode(4, self.setup_path))
-            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 4, self.setup_path))  # noqa: E501
+
+            # Dingo doesn't use CANopen, so the ID counter won't work correctly
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 0, 4, self.setup_path))  # noqa: E501
         elif (
             self.platform == Platform.DO100 or
             self.platform == Platform.DO150
         ):
             self.tests_for_platform.append(light_test.LightTestNode(4, self.setup_path))
-            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 2, 4, self.setup_path))  # noqa: E501
+
+            # Dingo doesn't use CANopen, so the ID counter won't work correctly
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 0, 4, self.setup_path))  # noqa: E501
 
             self.driving_tests.append(
                 drive_test.DriveTestNode(
@@ -148,7 +152,9 @@ class TestingNode(Node):
             self.tests_for_platform.append(imu_test.ImuTestNode(0, self.setup_path))
         elif self.platform == Platform.R100:
             self.tests_for_platform.append(light_test.LightTestNode(8))
-            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 4, 4, self.setup_path))  # noqa: E501
+
+            # Ridgeback doesn't use CANopen, so the ID counter won't work correctly
+            self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 0, 4, self.setup_path))  # noqa: E501
 
             self.tests_for_platform.append(estop_test.EstopTestNode('Front Left', self.setup_path))
             self.tests_for_platform.append(estop_test.EstopTestNode('Front Right', self.setup_path))  # noqa: E501
