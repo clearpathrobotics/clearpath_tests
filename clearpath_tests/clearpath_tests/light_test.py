@@ -216,7 +216,7 @@ class LightTestNode(ClearpathTestNode):
         ui_thread = threading.Thread(target=self.run_ui)
         ui_thread.start()
         while not self.test_done:
-            self.try_spin_once()
+            rclpy.spin_once(self)
         ui_thread.join()
         return self.results
 

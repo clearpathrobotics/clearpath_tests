@@ -202,7 +202,7 @@ class McuTestNode(ClearpathTestNode):
         start_at = self.get_clock().now()
         timeout_duration = Duration(seconds=10)
         while self.get_clock().now() - start_at <= timeout_duration and self.mcu_status is None:
-            self.try_spin_once()
+            rclpy.spin_once(self)
         mcu_sub.destroy()
 
         if self.mcu_status is None:

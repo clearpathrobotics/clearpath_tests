@@ -119,7 +119,7 @@ class ImuTestNode(ClearpathTestNode):
             start_time = self.get_clock().now()
             self.record_data = True
             while self.get_clock().now() - start_time < sample_duration:
-                self.try_spin_once()
+                rclpy.spin_once(self)
             self.record_data = False
 
         self.record_data = False

@@ -123,7 +123,7 @@ Are all these conditions met?""")
         self.start()
         start_time = self.get_clock().now()
         while not self.test_done and not self.test_error:
-            self.try_spin_once()
+            rclpy.spin_once(self)
         end_time = self.get_clock().now()
 
         # ensure we stop the robot
