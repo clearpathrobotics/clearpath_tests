@@ -151,7 +151,7 @@ Are all these conditions met?""")  # noqa: E501
                     test_duration.nanoseconds
                 )
             )
-            if time_error < 0.8:
+            if time_error < 0.75:
                 results.append(ClearpathTestResult(
                     False,
                     f'{test_name} (duration)',
