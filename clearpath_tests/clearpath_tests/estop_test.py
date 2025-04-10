@@ -27,6 +27,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 import threading
+import time
 
 from clearpath_generator_common.common import BaseGenerator
 from clearpath_tests.test_node import ClearpathTestNode, ClearpathTestResult
@@ -192,6 +193,10 @@ Safe to continue?"""
             results.append(ClearpathTestResult(True, self.test_name, 'E-stop cleared'))
 
         if safe_to_drive:
+            # wait 2s after clearing the e-stop to allow CAN connections to come back up
+            # if needed; this affects Ridgeback primarily
+            time.sleep(2.0)
+
             self.command_wheels()
             user_input = self.promptYN('Did the wheels rotate?')
             if user_input == 'N':
