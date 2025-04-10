@@ -113,7 +113,7 @@ class DiagnosticTestNode(ClearpathTestNode):
         start_time = self.get_clock().now()
         end_time = start_time + Duration(seconds=30.0)
 
-        self.get_logger().info('Collecting 30s of diagnostic data...')
+        self.get_logger().info('Collecting 30 seconds of diagnostic data...')
         while self.get_clock().now() < end_time:
             rclpy.spin_once(self)
 
