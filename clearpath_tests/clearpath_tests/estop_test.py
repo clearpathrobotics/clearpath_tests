@@ -98,7 +98,7 @@ class EstopTestNode(ClearpathTestNode):
         ui_thread = threading.Thread(target=self.run_ui)
         ui_thread.start()
         while not self.test_done:
-            rclpy.spin_once(self)
+            time.sleep(1.0)
         ui_thread.join()
         return self.results
 
