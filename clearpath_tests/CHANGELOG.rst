@@ -2,6 +2,15 @@
 Changelog for package clearpath_tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix a bug where the e-stop test could cause the test node to crash
+* Add a 2s delay between clearing the e-stop and moving the wheels to allow CAN reconnections as needed
+* Remove CAN device ID count for platforms that don't use CANopen
+* Lower the time threshold for linear drive test to 0.75 (from 0.8)
+* Change the default serial device for Jackal
+* Contributors: Chris Iverach-Brereton
+
 2.3.0 (2025-04-03)
 ------------------
 * Allow symlinks to the device handle
