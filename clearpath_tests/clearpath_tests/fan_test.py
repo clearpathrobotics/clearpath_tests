@@ -43,7 +43,7 @@ class FanTestNode(ClearpathTestNode):
 
         # Params
         self.n_fans = self.get_parameter_or('num_fans', n_fans)
-        self.fans_topic = self.get_parameter_or('fans_topic', 'platform/mcu/cmd_fans')
+        self.fans_topic = self.get_parameter_or('fans_topic', 'platform/cmd_fans')
         self.publish_rate = self.get_parameter_or('publish_rate', 2)
 
         self.publisher = self.create_publisher(Fans, self.fans_topic, qos_profile_system_default)
