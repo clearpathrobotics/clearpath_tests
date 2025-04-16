@@ -26,159 +26,167 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-import math
 
 from clearpath_generator_common.common import BaseGenerator
 from clearpath_tests.mobility_test import MobilityTestNode
 from clearpath_tests.test_node import ClearpathTestResult
+from clearpath_tests.tf import ConfigurableTransformListener
+from geometry_msgs.msg import Vector3Stamped
 import rclpy
 from rclpy.duration import Duration
-from tf_transformations import euler_from_quaternion
+from tf2_geometry_msgs import do_transform_vector3
+from tf2_ros import TransformException
+from tf2_ros.buffer import Buffer
 
 
 class RotationTestNode(MobilityTestNode):
     """
-    Use odometry to rotate n complete rotations and then stops.
+    Rotate anticlockwise at a fixed rate to verify that the IMU is aligned correctly.
 
-    Test assumes that the robot is on the ground, e-stops are cleared, and the area
-    is free of obstacles and obstructions.
+    The IMU should read positive angular velocity around the Z axis.
     """
 
     def __init__(self, setup_path='/etc/clearpath'):
         super().__init__('Rotation in place', 'rotation_test', setup_path)
 
-        self.goal_rotations = self.get_parameter_or('rotations', 2)
         self.max_speed = self.get_parameter_or('max_speed', 0.2)  # slightly more than 10 deg/s
-        self.error_margin = self.get_parameter_or('error_margin', 10.0)  # +/-10 degrees
+        self.record_data = False
 
-        # to debounce noisy odometry data, we assign a minimum duration to one rotation
-        # this doesn't need to be accurate, just an absolute lower-bound on the time
-        # the robot can take to do 1 full rotation at the requested speed
-        # in practice the robot should take longer than this
-        self.min_rotation_duration = Duration(seconds=math.pi / self.max_speed / 2.0)
+        self.base_link = 'base_link'
+        self.tf_buffer = Buffer()
+        self.tf_listener = ConfigurableTransformListener(
+            self.tf_buffer,
+            self,
+            tf_topic=f'/{self.clearpath_config.get_namespace()}/tf',
+            tf_static_topic=f'/{self.clearpath_config.get_namespace()}/tf_static'
+        )
+        self.gyro_samples = []
 
-        self.initial_yaw = None
-        self.num_rotations = 0
-        self.calculated_angular_displacement = 0.0
-        self.test_done = False
+    def odom_callback(self, imu_data):
+        super().odom_callback(imu_data)
 
-    def publish_callback(self):
-        if self.initial_yaw is None:
-            now = self.get_clock().now()
-            if (now - self.start_time) > self.odom_timeout:
-                self.get_logger().error('Timed out waiting for odometry. Terminating test')
-                raise TimeoutError('Timed out waiting for odometry')
-        else:
-            # publish the desired velocity
-            if self.num_rotations >= self.goal_rotations:
-                self.cmd_vel.twist.angular.z = 0.0
-                self.test_done = True
-            else:
-                self.cmd_vel.twist.angular.z = self.max_speed
-            super().publish_callback()
+        imu_frame = imu_data.header.frame_id
 
-    def odom_callback(self, msg):
-        super().odom_callback(msg)
+        try:
+            transformation = self.tf_buffer.lookup_transform(
+                imu_frame,
+                self.base_link,
+                rclpy.time.Time()
+            )
+        except TransformException as err:
+            self.get_logger().warning(f'TF Lookup failure: {err}')
+            return
 
-        xyzw = [
-            msg.pose.pose.orientation.x,
-            msg.pose.pose.orientation.y,
-            msg.pose.pose.orientation.z,
-            msg.pose.pose.orientation.w,
-        ]
-        rpy = euler_from_quaternion(xyzw)
+        accel_vector = Vector3Stamped()
+        accel_vector.header = imu_data.header
+        accel_vector.vector.x = imu_data.linear_acceleration.x
+        accel_vector.vector.y = imu_data.linear_acceleration.y
+        accel_vector.vector.z = imu_data.linear_acceleration.z
+        transformed_accel = do_transform_vector3(accel_vector, transformation)
 
-        if self.initial_yaw is None:
-            self.last_rotation_complete_at = self.get_clock().now()
-            self.initial_yaw = rpy[2] % (2 * math.pi)  # keep everything 0-2pi
-            self.previous_yaw = self.initial_yaw
-            self.current_yaw = self.initial_yaw
-        else:
-            self.previous_yaw = self.current_yaw
-            self.current_yaw = rpy[2] % (2 * math.pi)
+        gyro_vector = Vector3Stamped()
+        gyro_vector.header = imu_data.header
+        gyro_vector.vector.x = imu_data.angular_velocity.x
+        gyro_vector.vector.y = imu_data.angular_velocity.y
+        gyro_vector.vector.z = imu_data.angular_velocity.z
+        transformed_gyro = do_transform_vector3(gyro_vector, transformation)
 
-            delta = self.current_yaw - self.previous_yaw + (self.latest_odom.twist.twist.angular.z / 50.0)  # noqa: E501
-            if delta > 0:
-                self.calculated_angular_displacement += delta
+        if not self.test_in_progress:
+            self.get_logger().info(f'a ({transformed_accel.vector.x}, {transformed_accel.vector.y}, {transformed_accel.vector.z})')  # noqa: E501
+            self.get_logger().info(f'g ({transformed_gyro.vector.x}, {transformed_gyro.vector.y}, {transformed_gyro.vector.z})')  # noqa: E501
+            self.get_logger().info('---')
 
-            if self.calculated_angular_displacement >= 4 * math.pi * self.goal_rotations:
-                self.get_logger().info('Finished rotating')
-                self.num_rotations = self.goal_rotations
+        if self.record_data:
+            self.gyro_samples.append(transformed_gyro)
 
     def start(self):
         super().start()
 
     def run_test(self):
+        self.cmd_vel.twist.linear.x = 0.0
+        self.cmd_vel.twist.linear.y = 0.0
+        self.cmd_vel.twist.linear.z = 0.0
+        self.cmd_vel.twist.angular.x = 0.0
+        self.cmd_vel.twist.angular.y = 0.0
+        self.cmd_vel.twist.angular.z = self.max_speed
+
         self.test_in_progress = True
         self.last_rotation_complete_at = self.get_clock().now()
-        test_name = f'Rotation {self.goal_rotations}x in place'
 
         user_response = self.promptYN("""The robot will rotate on the spot
 The robot must be on the ground, all e-stops cleared, and a 2m safety clearance around the robot.
 Are all these conditions met?""")
         if user_response == 'N':
-            return [ClearpathTestResult(False, test_name, 'User skipped')]
+            return [ClearpathTestResult(False, self.test_name, 'User skipped')]
 
+        # start rotating but don't record data for 1s to remove noise
         self.get_logger().info('Starting rotation test')
         self.start()
+        startup_wait = Duration(seconds=1.0)
         start_time = self.get_clock().now()
-        while not self.test_done and not self.test_error:
+        while (
+            not self.test_error
+            and self.get_clock().now() - start_time <= startup_wait
+        ):
             rclpy.spin_once(self)
-        end_time = self.get_clock().now()
+        self.record_data = True
 
-        # ensure we stop the robot
-        # the publising timer is still running
-        # we need to support omni robots, so set linear X and Y!
-        self.cmd_vel.twist.linear.x = 0.0
-        self.cmd_vel.twist.linear.y = 0.0
+        if self.test_error:
+            self.record_data = False
+            self.cmd_vel.twist.angular.z = 0.0
+            self.get_logger().warning(f'Test aborted due to an error: {self.test_error_msg}')
+            return self.test_results
+
+        # record data for 10s
+        test_wait = Duration(seconds=10)
+        start_time = self.get_clock().now()
+        while (
+            not self.test_error
+            and self.get_clock().now() - start_time <= test_wait
+        ):
+            rclpy.spin_once(self)
+
+        if self.test_error:
+            self.record_data = False
+            self.cmd_vel.twist.angular.z = 0.0
+            self.get_logger().warning(f'Test aborted due to an error: {self.test_error_msg}')
+            return self.test_results
+
+        # rotate for another 1s before stopping to remove noise
+        self.record_data = False
+        end_wait = Duration(seconds=1.0)
+        start_time = self.get_clock().now()
+        while (
+            not self.test_error
+            and self.get_clock().now() - start_time <= end_wait
+        ):
+            rclpy.spin_once(self)
+
+        # stop turning
         self.cmd_vel.twist.angular.z = 0.0
-
-        results = self.test_results
 
         if self.test_error:
             self.get_logger().warning(f'Test aborted due to an error: {self.test_error_msg}')
+            return self.test_results
+
+        # process the results
+        results = self.test_results
+
+        if len(self.gyro_samples) <= 10:
+            results.append(ClearpathTestResult(
+                False,
+                self.test_name,
+                f'Insufficient IMU data recorded ({len(self.gyro_samples)}): is the IMU publishing at the correct rate?',  # noqa: E501
+            ))
         else:
-            expected_duration = Duration(seconds=self.goal_rotations * math.pi * 2 / self.max_speed)  # noqa: E501
-            test_duration = end_time - start_time
-
-            time_error = (
-                min(
-                    expected_duration.nanoseconds,
-                    test_duration.nanoseconds) /
-                max(
-                    expected_duration.nanoseconds,
-                    test_duration.nanoseconds
-                )
-            )
-            if time_error < 0.8:
-                results.append(ClearpathTestResult(
-                    False,
-                    f'{test_name} (duration)',
-                    f'Robot took {test_duration.nanoseconds / 1000000000:0.2f}s rotate {self.goal_rotations}x vs {expected_duration.nanoseconds / 1000000000:0.2f}s expected (err={time_error:0.4f})'  # noqa: E501
-                ))
-            else:
-                results.append(ClearpathTestResult(
-                    True,
-                    f'{test_name} (duration)',
-                    None
-                ))
-
-            user_response = self.promptYN(f"""Test complete.
-    Measure the robot's actual alignment.
-    Is it within {self.error_margin:0.1f} degrees of its original orientation?""")
-            if user_response == 'N':
-                measured_alignment = input("How many degrees off is the robot's alignment? ")
-                results.append(ClearpathTestResult(
-                    False,
-                    f'{test_name} (accuracy)',
-                    f'Incorrect aligment: {measured_alignment}'
-                ))
-            else:
-                results.append(ClearpathTestResult(
-                    True,
-                    f'{test_name} (accuracy)',
-                    'Alignment OK'
-                ))
+            avg_vel = sum(gyro.z for gyro in self.gyro_samples) / len(self.gyro_samples)
+            allowed_error = 0.8
+            measured_error = min(avg_vel, self.max_speed) / max(avg_vel, self.max_speed)
+            results.append(ClearpathTestResult(
+                measured_error >= allowed_error,
+                self.test_name,
+                f'Recorded angular velocity: {avg_vel}rad/s (err: {measured_error:0.2f})'
+            ))
 
         return results
 
