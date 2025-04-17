@@ -151,7 +151,7 @@ class TestingNode(Node):
             self.tests_for_platform.append(imu_test.ImuTestNode(setup_path=self.setup_path))
 
             # Rotation test to re-verify IMU alignment
-            self.tests_for_platform.append(rotation_test.RotationTestNode(setup_path=self.setup_path))
+            self.tests_for_platform.append(rotation_test.RotationTestNode(setup_path=self.setup_path))  # noqa: E501
 
             self.driving_tests.append(
                 drive_test.DriveTestNode(
