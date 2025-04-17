@@ -82,7 +82,6 @@ class TestingNode(Node):
         ]
 
         self.driving_tests = [
-            # rotation_test.RotationTestNode(self.setup_path),
             drive_test.DriveTestNode(
                 setup_path=self.setup_path,
                 default_speed_x=0.1,
@@ -120,7 +119,9 @@ class TestingNode(Node):
             self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan1', 0, 0, self.setup_path))  # noqa: E501
 
             # Rotation test to re-verify IMU alignment
-            self.tests_for_platform.append(rotation_test.RotationTestNode(self.setup_path))
+            self.tests_for_platform.append(rotation_test.RotationTestNode(
+                setup_path=self.setup_path
+            ))
         elif (
             self.platform == Platform.DD100 or
             self.platform == Platform.DD150
@@ -134,7 +135,9 @@ class TestingNode(Node):
             self.tests_for_platform.append(imu_test.ImuTestNode(setup_path=self.setup_path))
 
             # Rotation test to re-verify IMU alignment
-            self.tests_for_platform.append(rotation_test.RotationTestNode(self.setup_path))
+            self.tests_for_platform.append(rotation_test.RotationTestNode(
+                setup_path=self.setup_path
+            ))
         elif (
             self.platform == Platform.DO100 or
             self.platform == Platform.DO150
@@ -148,7 +151,7 @@ class TestingNode(Node):
             self.tests_for_platform.append(imu_test.ImuTestNode(setup_path=self.setup_path))
 
             # Rotation test to re-verify IMU alignment
-            self.tests_for_platform.append(rotation_test.RotationTestNode(self.setup_path))
+            self.tests_for_platform.append(rotation_test.RotationTestNode(setup_path=self.setup_path))
 
             self.driving_tests.append(
                 drive_test.DriveTestNode(
@@ -164,7 +167,9 @@ class TestingNode(Node):
             self.tests_for_platform.append(imu_test.ImuTestNode(0, self.setup_path))
 
             # Rotation test to re-verify IMU alignment
-            self.tests_for_platform.append(rotation_test.RotationTestNode(self.setup_path))
+            self.tests_for_platform.append(rotation_test.RotationTestNode(
+                setup_path=self.setup_path
+            ))
         elif self.platform == Platform.R100:
             self.tests_for_platform.append(light_test.LightTestNode(8))
 
@@ -178,7 +183,9 @@ class TestingNode(Node):
 
             # Rotation test to verify IMU alignment
             # Skip the tilt test because this platform is simply too big for that
-            self.tests_for_platform.append(rotation_test.RotationTestNode(self.setup_path))
+            self.tests_for_platform.append(rotation_test.RotationTestNode(
+                setup_path=self.setup_path
+            ))
 
             self.driving_tests.append(
                 drive_test.DriveTestNode(
