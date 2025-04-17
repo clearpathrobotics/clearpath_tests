@@ -111,7 +111,7 @@ class RotationTestNode(MobilityTestNode):
 
         # Subscribe to our default IMU
         imu_topic = f'/{self.namespace}/sensors/imu_{self.imu_num}/data'
-        self.get_logger().info(f'Waiting for IMU data on {imu_topic}...')
+        self.get_logger().info(f'Subscribing to IMU data on {imu_topic}...')
         self.imu_sub = self.create_subscription(
             Imu,
             imu_topic,
