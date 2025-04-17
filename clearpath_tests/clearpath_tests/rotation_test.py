@@ -202,7 +202,7 @@ Are all these conditions met?""")
             results.append(ClearpathTestResult(
                 measured_error >= allowed_error,
                 self.test_name,
-                f'Recorded angular velocity: {avg_vel}rad/s (err: {measured_error:0.2f})'
+                f'Recorded angular velocity: {avg_vel}rad/s (err: {1.0 - measured_error:0.2f})'
             ))
 
         return results
