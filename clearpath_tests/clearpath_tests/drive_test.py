@@ -142,7 +142,7 @@ Are all these conditions met?""")  # noqa: E501
             )
             test_duration = end_time - start_time
 
-            time_error = (
+            time_accuracy = (
                 min(
                     expected_duration.nanoseconds,
                     test_duration.nanoseconds) /
@@ -151,11 +151,11 @@ Are all these conditions met?""")  # noqa: E501
                     test_duration.nanoseconds
                 )
             )
-            if time_error < 0.75:
+            if time_accuracy < 0.75:
                 results.append(ClearpathTestResult(
                     False,
                     f'{test_name} (duration)',
-                    f'Robot took {test_duration.nanoseconds / 1000000000:0.2f}s to drive {self.goal_distance}m vs {expected_duration.nanoseconds / 1000000000:0.2f}s expected (err={1.0 - time_error:0.4f})'  # noqa: E501
+                    f'Robot took {test_duration.nanoseconds / 1000000000:0.2f}s to drive {self.goal_distance}m vs {expected_duration.nanoseconds / 1000000000:0.2f}s expected (err={1.0 - time_accuracy:0.4f})'  # noqa: E501
                 ))
             else:
                 results.append(ClearpathTestResult(

@@ -42,20 +42,17 @@ from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 
 
-class RotationTestNode(MobilityTestNode):
+class LinearAccelerationTestNode(MobilityTestNode):
     """
-    Rotate anticlockwise at a fixed rate to verify that the IMU is aligned correctly.
+    Accelerate & decelerate smoothly over 10s
 
-    The IMU should read positive angular velocity around the Z axis.
+    The IMU should read X acceleration of +/- 0.2m/s/s
     """
 
     def __init__(self, imu_num=0, setup_path='/etc/clearpath'):
-        super().__init__('Rotation in place', 'rotation_test', setup_path)
+        super().__init__('Linear acceleration', 'linear_acceleration_test', setup_path)
 
-        self.max_speed = self.get_parameter_or(
-            'max_speed',
-            0.3490658503988659,  # 20 deg/s
-        )
+        self.acceleration = self.get_parameter_or('acceleration', 0.2)
         self.record_data = False
 
         self.imu_num = imu_num
@@ -68,7 +65,7 @@ class RotationTestNode(MobilityTestNode):
             tf_topic=f'/{self.clearpath_config.get_namespace()}/tf',
             tf_static_topic=f'/{self.clearpath_config.get_namespace()}/tf_static'
         )
-        self.gyro_samples = []
+        self.accel_samples = []
 
     def imu_callback(self, imu_data):
         super().odom_callback(imu_data)
@@ -105,7 +102,7 @@ class RotationTestNode(MobilityTestNode):
             self.get_logger().info('---')
 
         if self.record_data:
-            self.gyro_samples.append(transformed_gyro)
+            self.accel_samples.append(transformed_accel)
 
     def start(self):
         super().start()
@@ -126,61 +123,41 @@ class RotationTestNode(MobilityTestNode):
         self.cmd_vel.twist.linear.z = 0.0
         self.cmd_vel.twist.angular.x = 0.0
         self.cmd_vel.twist.angular.y = 0.0
-        self.cmd_vel.twist.angular.z = self.max_speed
+        self.cmd_vel.twist.angular.z = 0.0
 
         self.test_in_progress = True
 
-        user_response = self.promptYN("""The robot will rotate on the spot
+        user_response = self.promptYN("""The robot will accelerate & decelerate for 10s.
+Estimated travel distance is 5m. Ensure there is sufficient room ahead of the robot.
 The robot must be on the ground, all e-stops cleared, and a 2m safety clearance around the robot.
 Are all these conditions met?""")
         if user_response == 'N':
             return [ClearpathTestResult(False, self.test_name, 'User skipped')]
 
         # start rotating but don't record data for 1s to remove noise
-        self.get_logger().info('Starting rotation test')
+        self.get_logger().info('Starting acceleration test')
         self.start()
-        startup_wait = Duration(seconds=1.0)
+        accel_duration = Duration(seconds=2.5)
         start_time = self.get_clock().now()
-        while (
-            not self.test_error
-            and self.get_clock().now() - start_time <= startup_wait
-        ):
-            rclpy.spin_once(self)
         self.record_data = True
-
-        if self.test_error:
-            self.record_data = False
-            self.cmd_vel.twist.angular.z = 0.0
-            self.get_logger().warning(f'Test aborted due to an error: {self.test_error_msg}')
-            return self.test_results
-
-        # record data for 10s
-        test_wait = Duration(seconds=10)
+        while (
+            not self.test_error
+            and self.get_clock().now() - start_time <= accel_duration
+        ):
+            dt = (self.get_clock().now() - start_time).nanoseconds / 1000000000
+            self.cmd_vel.twist.linear.x = self.acceleration * dt
+            rclpy.spin_once(self)
         start_time = self.get_clock().now()
         while (
             not self.test_error
-            and self.get_clock().now() - start_time <= test_wait
+            and self.get_clock().now() - start_time <= accel_duration
         ):
+            dt = (self.get_clock().now() - start_time).nanoseconds / 1000000000
+            self.cmd_vel.twist.linear.x = self.acceleration * (2.5 - dt)
             rclpy.spin_once(self)
 
-        if self.test_error:
-            self.record_data = False
-            self.cmd_vel.twist.angular.z = 0.0
-            self.get_logger().warning(f'Test aborted due to an error: {self.test_error_msg}')
-            return self.test_results
-
-        # rotate for another 1s before stopping to remove noise
         self.record_data = False
-        end_wait = Duration(seconds=1.0)
-        start_time = self.get_clock().now()
-        while (
-            not self.test_error
-            and self.get_clock().now() - start_time <= end_wait
-        ):
-            rclpy.spin_once(self)
-
-        # stop turning
-        self.cmd_vel.twist.angular.z = 0.0
+        self.cmd_vel.twist.linear.x = 0.0
 
         if self.test_error:
             self.get_logger().warning(f'Test aborted due to an error: {self.test_error_msg}')
@@ -189,25 +166,25 @@ Are all these conditions met?""")
         # process the results
         results = self.test_results
 
-        if len(self.gyro_samples) <= 10:
+        if len(self.accel_samples) <= 10:
             results.append(ClearpathTestResult(
                 False,
                 self.test_name,
-                f'Insufficient IMU data recorded ({len(self.gyro_samples)}): is the IMU publishing at the correct rate?',  # noqa: E501
+                f'Insufficient IMU data recorded ({len(self.accel_samples)}): is the IMU publishing at the correct rate?',  # noqa: E501
             ))
         else:
-            avg_vel = sum(gyro.vector.z for gyro in self.gyro_samples) / len(self.gyro_samples)
+            avg_accel = sum(accel.vector.x for accel in self.accel_samples) / len(self.accel_samples)  # noqa: E501
             min_accuracy = 0.8
 
             if self.clearpath_config.platform.get_platform_model() == Platform.J100:
                 # default Jackal IMU is terrible, so allow wider margins
                 min_accuracy = 0.6
 
-            measured_accuracy = min(avg_vel, self.max_speed) / max(avg_vel, self.max_speed)
+            measured_accuracy = min(avg_accel, self.acceleration) / max(avg_accel, self.acceleration)
             results.append(ClearpathTestResult(
                 measured_accuracy >= min_accuracy,
                 self.test_name,
-                f'Recorded angular velocity: {avg_vel}rad/s (accuracy: {measured_accuracy:0.2f})'
+                f'Recorded linear acceleration: {avg_accel}m/s^2 (accuracy: {measured_accuracy:0.2f})'  # noqa: E501
             ))
 
         return results
@@ -218,7 +195,7 @@ def main():
     rclpy.init()
 
     try:
-        rt = RotationTestNode(setup_path)
+        rt = LinearAccelerationTestNode(setup_path)
         rt.start()
         try:
             while not rt.test_done:

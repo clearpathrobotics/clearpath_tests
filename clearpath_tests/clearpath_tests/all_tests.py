@@ -51,6 +51,7 @@ from clearpath_tests import (
     fan_test,
     imu_test,
     light_test,
+    linear_acceleration_test,
     mcu_test,
     rotation_test,
     wifi_test,
@@ -118,8 +119,11 @@ class TestingNode(Node):
             # so just allow anything here
             self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan1', 0, 0, self.setup_path))  # noqa: E501
 
-            # Rotation test to re-verify IMU alignment
-            self.tests_for_platform.append(rotation_test.RotationTestNode(
+            # Dynamic IMU tests
+            self.driving_tests.insert(0, rotation_test.RotationTestNode(
+                setup_path=self.setup_path
+            ))
+            self.driving_tests.insert(0, linear_acceleration_test.LinearAccelerationTestNode(
                 setup_path=self.setup_path
             ))
         elif (
@@ -134,8 +138,11 @@ class TestingNode(Node):
             # Dingo has an integral IMU
             self.tests_for_platform.append(imu_test.ImuTestNode(setup_path=self.setup_path))
 
-            # Rotation test to re-verify IMU alignment
-            self.tests_for_platform.append(rotation_test.RotationTestNode(
+            # Dynamic IMU tests
+            self.driving_tests.insert(0, rotation_test.RotationTestNode(
+                setup_path=self.setup_path
+            ))
+            self.driving_tests.insert(0, linear_acceleration_test.LinearAccelerationTestNode(
                 setup_path=self.setup_path
             ))
         elif (
@@ -150,8 +157,13 @@ class TestingNode(Node):
             # Dingo has an integral IMU
             self.tests_for_platform.append(imu_test.ImuTestNode(setup_path=self.setup_path))
 
-            # Rotation test to re-verify IMU alignment
-            self.tests_for_platform.append(rotation_test.RotationTestNode(setup_path=self.setup_path))  # noqa: E501
+            # Dynamic IMU tests
+            self.driving_tests.insert(0, rotation_test.RotationTestNode(
+                setup_path=self.setup_path
+            ))
+            self.driving_tests.insert(0, linear_acceleration_test.LinearAccelerationTestNode(
+                setup_path=self.setup_path
+            ))
 
             self.driving_tests.append(
                 drive_test.DriveTestNode(
@@ -166,8 +178,11 @@ class TestingNode(Node):
         elif self.platform == Platform.J100:
             self.tests_for_platform.append(imu_test.ImuTestNode(0, self.setup_path))
 
-            # Rotation test to re-verify IMU alignment
-            self.tests_for_platform.append(rotation_test.RotationTestNode(
+            # Dynamic IMU tests
+            self.driving_tests.insert(0, rotation_test.RotationTestNode(
+                setup_path=self.setup_path
+            ))
+            self.driving_tests.insert(0, linear_acceleration_test.LinearAccelerationTestNode(
                 setup_path=self.setup_path
             ))
         elif self.platform == Platform.R100:
@@ -181,9 +196,11 @@ class TestingNode(Node):
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear Left', self.setup_path))
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear Right', self.setup_path))
 
-            # Rotation test to verify IMU alignment
-            # Skip the tilt test because this platform is simply too big for that
-            self.tests_for_platform.append(rotation_test.RotationTestNode(
+            # Dynamic IMU tests
+            self.driving_tests.insert(0, rotation_test.RotationTestNode(
+                setup_path=self.setup_path
+            ))
+            self.driving_tests.insert(0, linear_acceleration_test.LinearAccelerationTestNode(
                 setup_path=self.setup_path
             ))
 
@@ -203,6 +220,14 @@ class TestingNode(Node):
             self.tests_for_platform.append(estop_test.EstopTestNode('Front Right', self.setup_path))  # noqa: E501
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear Left', self.setup_path))
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear Right', self.setup_path))
+
+            # Dynamic IMU tests
+            self.driving_tests.insert(0, rotation_test.RotationTestNode(
+                setup_path=self.setup_path
+            ))
+            self.driving_tests.insert(0, linear_acceleration_test.LinearAccelerationTestNode(
+                setup_path=self.setup_path
+            ))
         else:
             raise NotImplementedError(f'{self.platform} tests are not implemented')
 
