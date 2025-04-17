@@ -51,7 +51,10 @@ class RotationTestNode(MobilityTestNode):
     def __init__(self, imu_num=0, setup_path='/etc/clearpath'):
         super().__init__('Rotation in place', 'rotation_test', setup_path)
 
-        self.max_speed = self.get_parameter_or('max_speed', 0.2)  # slightly more than 10 deg/s
+        self.max_speed = self.get_parameter_or(
+            'max_speed',
+            0.3490658503988659,  # 20 deg/s
+        )
         self.record_data = False
 
         self.imu_num = imu_num
@@ -105,9 +108,13 @@ class RotationTestNode(MobilityTestNode):
 
     def start(self):
         super().start()
+
+        # Subscribe to our default IMU
+        imu_topic = f'/{self.namespace}/sensors/imu_{self.imu_num}/data'
+        self.get_logger().info(f'Waiting for IMU data on {imu_topic}...')
         self.imu_sub = self.create_subscription(
             Imu,
-            f'/{self.namespace}/sensors/imu_{self.imu_num}/data',
+            imu_topic,
             self.imu_callback,
             qos_profile=qos_profile_sensor_data,
         )
