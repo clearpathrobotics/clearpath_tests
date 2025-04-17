@@ -27,6 +27,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+from clearpath_config.common.types.platform import Platform
 from clearpath_generator_common.common import BaseGenerator
 from clearpath_tests.mobility_test import MobilityTestNode
 from clearpath_tests.test_node import ClearpathTestResult
@@ -198,6 +199,11 @@ Are all these conditions met?""")
         else:
             avg_vel = sum(gyro.vector.z for gyro in self.gyro_samples) / len(self.gyro_samples)
             allowed_error = 0.8
+
+            if self.clearpath_config.platform.get_platform_model() == Platform.J100:
+                # default Jackal IMU is terrible, so allow wider margins
+                allowed_error = 0.6
+
             measured_error = min(avg_vel, self.max_speed) / max(avg_vel, self.max_speed)
             results.append(ClearpathTestResult(
                 measured_error >= allowed_error,
