@@ -107,7 +107,7 @@ class MobilityTestNode(ClearpathTestNode):
             qos_profile_sensor_data,
         )
 
-        self.get_logger().info(f'Waiting for odometry on {self.odom_topic}...')
+        self.get_logger().info(f'Subscribing to odometry on {self.odom_topic}...')
 
         self.publisher = self.create_publisher(
             TwistStamped,
