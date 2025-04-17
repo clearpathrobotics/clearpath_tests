@@ -196,7 +196,7 @@ Are all these conditions met?""")
                 f'Insufficient IMU data recorded ({len(self.gyro_samples)}): is the IMU publishing at the correct rate?',  # noqa: E501
             ))
         else:
-            avg_vel = sum(gyro.z for gyro in self.gyro_samples) / len(self.gyro_samples)
+            avg_vel = sum(gyro.vector.z for gyro in self.gyro_samples) / len(self.gyro_samples)
             allowed_error = 0.8
             measured_error = min(avg_vel, self.max_speed) / max(avg_vel, self.max_speed)
             results.append(ClearpathTestResult(
