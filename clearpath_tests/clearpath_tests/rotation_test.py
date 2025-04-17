@@ -34,6 +34,8 @@ from clearpath_tests.tf import ConfigurableTransformListener
 from geometry_msgs.msg import Vector3Stamped
 import rclpy
 from rclpy.duration import Duration
+from rclpy.qos import qos_profile_sensor_data
+from sensor_msgs.msg import Imu
 from tf2_geometry_msgs import do_transform_vector3
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
@@ -46,11 +48,13 @@ class RotationTestNode(MobilityTestNode):
     The IMU should read positive angular velocity around the Z axis.
     """
 
-    def __init__(self, setup_path='/etc/clearpath'):
+    def __init__(self, imu_num=0, setup_path='/etc/clearpath'):
         super().__init__('Rotation in place', 'rotation_test', setup_path)
 
         self.max_speed = self.get_parameter_or('max_speed', 0.2)  # slightly more than 10 deg/s
         self.record_data = False
+
+        self.imu_num = imu_num
 
         self.base_link = 'base_link'
         self.tf_buffer = Buffer()
@@ -62,7 +66,7 @@ class RotationTestNode(MobilityTestNode):
         )
         self.gyro_samples = []
 
-    def odom_callback(self, imu_data):
+    def imu_callback(self, imu_data):
         super().odom_callback(imu_data)
 
         imu_frame = imu_data.header.frame_id
@@ -101,6 +105,12 @@ class RotationTestNode(MobilityTestNode):
 
     def start(self):
         super().start()
+        self.imu_sub = self.create_subscription(
+            Imu,
+            f'/{self.namespace}/sensors/imu_{self.imu_num}/data',
+            self.imu_callback,
+            qos_profile=qos_profile_sensor_data,
+        )
 
     def run_test(self):
         self.cmd_vel.twist.linear.x = 0.0
