@@ -52,10 +52,7 @@ from clearpath_tests import (
     imu_test,
     light_test,
     mcu_test,
-    # disabled for now as its accuracy isn't up to par and it
-    # frequently causes the motors to self-throttle on high-traction
-    # surfaces
-    # rotation_test,
+    rotation_test,
     wifi_test,
 )
 from clearpath_tests.test_node import (
@@ -121,6 +118,9 @@ class TestingNode(Node):
             # vcan1 has batteries, optional e-stop, optional wireless charger
             # so just allow anything here
             self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan1', 0, 0, self.setup_path))  # noqa: E501
+
+            # Rotation test to re-verify IMU alignment
+            self.tests_for_platform.append(rotation_test.RotationTestNode(self.setup_path))
         elif (
             self.platform == Platform.DD100 or
             self.platform == Platform.DD150
@@ -129,6 +129,12 @@ class TestingNode(Node):
 
             # Dingo doesn't use CANopen, so the ID counter won't work correctly
             self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 0, 4, self.setup_path))  # noqa: E501
+
+            # Dingo has an integral IMU
+            self.tests_for_platform.append(imu_test.ImuTestNode(setup_path=self.setup_path))
+
+            # Rotation test to re-verify IMU alignment
+            self.tests_for_platform.append(rotation_test.RotationTestNode(self.setup_path))
         elif (
             self.platform == Platform.DO100 or
             self.platform == Platform.DO150
@@ -137,6 +143,12 @@ class TestingNode(Node):
 
             # Dingo doesn't use CANopen, so the ID counter won't work correctly
             self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 0, 4, self.setup_path))  # noqa: E501
+
+            # Dingo has an integral IMU
+            self.tests_for_platform.append(imu_test.ImuTestNode(setup_path=self.setup_path))
+
+            # Rotation test to re-verify IMU alignment
+            self.tests_for_platform.append(rotation_test.RotationTestNode(self.setup_path))
 
             self.driving_tests.append(
                 drive_test.DriveTestNode(
@@ -150,6 +162,9 @@ class TestingNode(Node):
             pass
         elif self.platform == Platform.J100:
             self.tests_for_platform.append(imu_test.ImuTestNode(0, self.setup_path))
+
+            # Rotation test to re-verify IMU alignment
+            self.tests_for_platform.append(rotation_test.RotationTestNode(self.setup_path))
         elif self.platform == Platform.R100:
             self.tests_for_platform.append(light_test.LightTestNode(8))
 
@@ -160,6 +175,10 @@ class TestingNode(Node):
             self.tests_for_platform.append(estop_test.EstopTestNode('Front Right', self.setup_path))  # noqa: E501
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear Left', self.setup_path))
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear Right', self.setup_path))
+
+            # Rotation test to verify IMU alignment
+            # Skip the tilt test because this platform is simply too big for that
+            self.tests_for_platform.append(rotation_test.RotationTestNode(self.setup_path))
 
             self.driving_tests.append(
                 drive_test.DriveTestNode(
@@ -177,6 +196,8 @@ class TestingNode(Node):
             self.tests_for_platform.append(estop_test.EstopTestNode('Front Right', self.setup_path))  # noqa: E501
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear Left', self.setup_path))
             self.tests_for_platform.append(estop_test.EstopTestNode('Rear Right', self.setup_path))
+        else:
+            raise NotImplementedError(f'{self.platform} tests are not implemented')
 
         if os.environ['HOME']:
             default_log_dir = os.environ['HOME']
