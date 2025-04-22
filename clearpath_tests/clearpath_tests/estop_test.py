@@ -58,6 +58,7 @@ class EstopTestNode(ClearpathTestNode):
         self.estop_engaged = None
         self.test_in_progress = False
         self.estop_location = estop_location
+        self.estop_type = estop_type
 
     def estop_callback(self, msg: Bool):
         self.estop_engaged = msg.data
@@ -69,7 +70,7 @@ class EstopTestNode(ClearpathTestNode):
                 state = 'stopped'
             else:
                 state = 'clear'
-            self.get_logger().info(f'E-Stop state: {state}')
+            self.get_logger().info(f'{self.estop_type} state: {state}')
 
     def start(self):
         self.estop_sub = self.create_subscription(
@@ -82,7 +83,7 @@ class EstopTestNode(ClearpathTestNode):
     def run_test(self):
         if self.optional:
             user_input = self.promptYN(
-                f'Does this robot have a {self.estop_location} E-Stop?',
+                f'Does this robot have a {self.estop_location} {self.estop_type}?',
                 default='N',
             )
             if user_input == 'N':
@@ -134,7 +135,7 @@ Safe to continue?"""
         # wait until we know the state of the e-stop
         start_time = self.get_clock().now()
         timeout = Duration(seconds=10)
-        print('Getting e-stop status...')
+        print(f'Getting {self.estop_type} status...')
         while (
             self.estop_engaged is None and
             (self.get_clock().now() - start_time) < timeout
@@ -145,27 +146,27 @@ Safe to continue?"""
             results.append(ClearpathTestResult(
                 False,
                 self.test_name,
-                'Timed out waiting for e-stop state',
+                f'Timed out waiting for {self.estop_type} state',
             ))
             self.test_done = True
             return
 
         if self.estop_engaged:
-            print('Emergency stop engaged. Disengage e-stops now')
+            print(f'{self.estop_type} engaged. Disengage {self.estop_type} now')
             if not self.wait_for_estop(False, 60):
                 results.append(ClearpathTestResult(
                     False,
                     self.test_name,
-                    'Timed out waiting for user to clear e-stops'
+                    f'Timed out waiting for user to clear {self.estop_type}'
                 ))
                 self.test_done = True
                 return
 
-        print(f'Engage the {self.estop_location} emergency stop now.')
+        print(f'Engage the {self.estop_location} {self.estop_type} now.')
         if not self.wait_for_estop(True, 30):
-            results.append(ClearpathTestResult(False, self.test_name, 'E-stop failed to engage'))
+            results.append(ClearpathTestResult(False, self.test_name, f'{self.estop_type} failed to engage'))
         else:
-            results.append(ClearpathTestResult(True, self.test_name, 'E-stop engaged'))
+            results.append(ClearpathTestResult(True, self.test_name, f'{self.estop_type} engaged'))
 
         user_input = self.promptYN('Will now command the wheels to turn\nSafe to proceed?')
         if user_input == 'N':
@@ -183,20 +184,28 @@ Safe to continue?"""
                 results.append(ClearpathTestResult(
                     False,
                     f'{self.test_name} (wheel rotation a)',
-                    'Wheels turned while e-stop engaged'
+                    f'Wheels turned while {self.estop_type} engaged'
                 ))
             else:
                 results.append(ClearpathTestResult(
                     True,
                     f'{self.test_name} (wheel rotation a)',
-                    'Wheels did not turn while e-stop engaged'
+                    f'Wheels did not turn while {self.estop_type} engaged'
                 ))
 
         print(f'Clear the {self.estop_location} emergency stop now.')
         if not self.wait_for_estop(False, 30):
-            results.append(ClearpathTestResult(False, self.test_name, 'E-stop failed to clear'))
+            results.append(ClearpathTestResult(
+                False,
+                self.test_name,
+                f'{self.estop_type} failed to clear',
+            ))
         else:
-            results.append(ClearpathTestResult(True, self.test_name, 'E-stop cleared'))
+            results.append(ClearpathTestResult(
+                True,
+                self.test_name,
+                f'{self.estop_type} cleared',
+            ))
 
         if safe_to_drive:
             # wait 2s after clearing the e-stop to allow CAN connections to come back up
@@ -209,13 +218,13 @@ Safe to continue?"""
                 results.append(ClearpathTestResult(
                     False,
                     f'{self.test_name} (wheel rotation b)',
-                    'Wheels did not turn while e-stop clear'
+                    f'Wheels did not turn while {self.estop_type} clear'
                 ))
             else:
                 results.append(ClearpathTestResult(
                     True,
                     f'{self.test_name} (wheel rotation b)',
-                    'Wheels turned while e-stop clear'
+                    f'Wheels turned while {self.estop_type} clear'
                 ))
 
         self.test_done = True
