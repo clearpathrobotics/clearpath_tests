@@ -42,9 +42,15 @@ from std_msgs.msg import Bool
 class EstopTestNode(ClearpathTestNode):
     """Ensure e-stop works correctly."""
 
-    def __init__(self, estop_location, setup_path='/etc/clearpath', optional=False):
+    def __init__(
+        self,
+        estop_location,
+        setup_path='/etc/clearpath',
+        optional=False,
+        estop_type='E-Stop',
+    ):
         super().__init__(
-            f'E-Stop ({estop_location})',
+            f'{estop_type} ({estop_location})',
             f'estop_test_{estop_location.strip().lower().replace(" ", "_").replace("-", "_")}',
             setup_path
         )

@@ -135,6 +135,12 @@ class TestingNode(Node):
             # Dingo doesn't use CANopen, so the ID counter won't work correctly
             self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 0, 4, self.setup_path))  # noqa: E501
 
+            self.tests_for_platform.append(estop_test.EstopTestNode(
+                'Rear',
+                setup_path=self.setup_path,
+                estop_type='Motor Cutoff',
+            ))
+
             # Dingo has an integral IMU
             self.tests_for_platform.append(imu_test.ImuTestNode(setup_path=self.setup_path))
 
@@ -153,6 +159,12 @@ class TestingNode(Node):
 
             # Dingo doesn't use CANopen, so the ID counter won't work correctly
             self.tests_for_platform.append(canbus_test.CanbusTestNode('vcan0', 0, 4, self.setup_path))  # noqa: E501
+
+            self.tests_for_platform.append(estop_test.EstopTestNode(
+                'Rear',
+                setup_path=self.setup_path,
+                estop_type='Motor Cutoff',
+            ))
 
             # Dingo has an integral IMU
             self.tests_for_platform.append(imu_test.ImuTestNode(setup_path=self.setup_path))
@@ -177,6 +189,12 @@ class TestingNode(Node):
             pass
         elif self.platform == Platform.J100:
             self.tests_for_platform.append(imu_test.ImuTestNode(0, self.setup_path))
+
+            self.tests_for_platform.append(estop_test.EstopTestNode(
+                'Rear',
+                setup_path=self.setup_path,
+                estop_type='Motor Cutoff',
+            ))
 
             # Dynamic IMU tests
             self.driving_tests.insert(0, rotation_test.RotationTestNode(
