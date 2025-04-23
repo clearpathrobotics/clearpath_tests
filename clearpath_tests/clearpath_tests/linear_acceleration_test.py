@@ -44,7 +44,7 @@ from tf2_ros.buffer import Buffer
 
 class LinearAccelerationTestNode(MobilityTestNode):
     """
-    Accelerate & decelerate smoothly over 10s
+    Accelerate & decelerate smoothly over 10s.
 
     The IMU should read X acceleration of +/- 0.2m/s/s
     """
@@ -166,7 +166,7 @@ Are all these conditions met?""")
             not self.test_error
             and self.get_clock().now() - start_time <= accel_duration
         ):
-            dt = (self.get_clock().now() - start_time).nanoseconds / 1000000000
+            dt = (self.get_clock().now() - start_time).nanoseconds / 1_000_000_000
             self.cmd_vel.twist.linear.x = self.acceleration * dt
             rclpy.spin_once(self)
         start_time = self.get_clock().now()
@@ -174,7 +174,7 @@ Are all these conditions met?""")
             not self.test_error
             and self.get_clock().now() - start_time <= accel_duration
         ):
-            dt = (self.get_clock().now() - start_time).nanoseconds / 1000000000
+            dt = (self.get_clock().now() - start_time).nanoseconds / 1_000_000_000
             self.cmd_vel.twist.linear.x = self.acceleration * (2.5 - dt)
             rclpy.spin_once(self)
         if self.test_error:
@@ -206,7 +206,7 @@ Are all these conditions met?""")
                 # default Jackal IMU is terrible, so allow wider margins
                 min_accuracy = 0.6
 
-            measured_accuracy = min(avg_accel, self.acceleration) / max(avg_accel, self.acceleration)
+            measured_accuracy = min(avg_accel, self.acceleration) / max(avg_accel, self.acceleration)  # noqa: E501
             results.append(ClearpathTestResult(
                 measured_accuracy >= min_accuracy,
                 self.test_name,

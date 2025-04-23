@@ -164,9 +164,17 @@ Safe to continue?"""
 
         print(f'Engage the {self.estop_location} {self.estop_type} now.')
         if not self.wait_for_estop(True, 30):
-            results.append(ClearpathTestResult(False, self.test_name, f'{self.estop_type} failed to engage'))
+            results.append(ClearpathTestResult(
+                False,
+                self.test_name,
+                f'{self.estop_type} failed to engage',
+            ))
         else:
-            results.append(ClearpathTestResult(True, self.test_name, f'{self.estop_type} engaged'))
+            results.append(ClearpathTestResult(
+                True,
+                self.test_name,
+                f'{self.estop_type} engaged',
+            ))
 
         user_input = self.promptYN('Will now command the wheels to turn\nSafe to proceed?')
         if user_input == 'N':
