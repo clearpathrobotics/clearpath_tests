@@ -56,6 +56,7 @@ class LinearAccelerationTestNode(MobilityTestNode):
         self.record_data = False
 
         self.imu_num = imu_num
+        self.latest_imu = None
 
         self.base_link = 'base_link'
         self.tf_buffer = Buffer()
@@ -68,8 +69,7 @@ class LinearAccelerationTestNode(MobilityTestNode):
         self.accel_samples = []
 
     def imu_callback(self, imu_data):
-        super().odom_callback(imu_data)
-
+        self.latest_imu = imu_data
         imu_frame = imu_data.header.frame_id
 
         try:
@@ -133,6 +133,27 @@ The robot must be on the ground, all e-stops cleared, and a 2m safety clearance 
 Are all these conditions met?""")
         if user_response == 'N':
             return [ClearpathTestResult(False, self.test_name, 'User skipped')]
+
+        # wait until we get the first IMU message or 10s passes
+        start_time = self.get_clock().now()
+        timeout_duration = Duration(seconds=10)
+        while (
+            self.latest_imu is None
+            and self.get_clock().now() - start_time <= timeout_duration
+            and not self.test_error
+        ):
+            rclpy.spin_once(self)
+
+        if self.test_error:
+            self.get_logger().warning(f'Test aborted due to an error: {self.test_error_msg}')
+            return self.test_results
+        elif self.latest_imu is None:
+            self.get_logger().warning('Timed out waiting for IMU data')
+            return [ClearpathTestResult(
+                False,
+                self.test_name,
+                'Timed out waiting for IMU data',
+            )]
 
         # start rotating but don't record data for 1s to remove noise
         self.get_logger().info('Starting acceleration test')
