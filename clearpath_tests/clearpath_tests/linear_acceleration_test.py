@@ -134,6 +134,9 @@ Are all these conditions met?""")
         if user_response == 'N':
             return [ClearpathTestResult(False, self.test_name, 'User skipped')]
 
+        self.get_logger().info('Starting acceleration test')
+        self.start()
+
         # wait until we get the first IMU message or 10s passes
         start_time = self.get_clock().now()
         timeout_duration = Duration(seconds=10)
@@ -155,9 +158,7 @@ Are all these conditions met?""")
                 'Timed out waiting for IMU data',
             )]
 
-        # start rotating but don't record data for 1s to remove noise
-        self.get_logger().info('Starting acceleration test')
-        self.start()
+        # accelerate & decelerate over 5s
         accel_duration = Duration(seconds=2.5)
         start_time = self.get_clock().now()
         self.record_data = True
@@ -176,17 +177,21 @@ Are all these conditions met?""")
             dt = (self.get_clock().now() - start_time).nanoseconds / 1000000000
             self.cmd_vel.twist.linear.x = self.acceleration * (2.5 - dt)
             rclpy.spin_once(self)
-
-        self.record_data = False
-        self.cmd_vel.twist.linear.x = 0.0
-
         if self.test_error:
             self.get_logger().warning(f'Test aborted due to an error: {self.test_error_msg}')
             return self.test_results
+        self.record_data = False
+
+        # stop driving
+        # wait 1s to ensure we publish the command
+        self.cmd_vel.twist.linear.x = 0.0
+        test_wait = Duration(seconds=1)
+        start_time = self.get_clock().now()
+        while self.get_clock().now() - start_time <= test_wait:
+            rclpy.spin_once(self)
 
         # process the results
         results = self.test_results
-
         if len(self.accel_samples) <= 10:
             results.append(ClearpathTestResult(
                 False,

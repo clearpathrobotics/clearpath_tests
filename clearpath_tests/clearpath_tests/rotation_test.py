@@ -169,8 +169,6 @@ Are all these conditions met?""")
             and self.get_clock().now() - start_time <= startup_wait
         ):
             rclpy.spin_once(self)
-        self.record_data = True
-
         if self.test_error:
             self.record_data = False
             self.cmd_vel.twist.angular.z = 0.0
@@ -178,6 +176,7 @@ Are all these conditions met?""")
             return self.test_results
 
         # record data for 10s
+        self.record_data = True
         test_wait = Duration(seconds=10)
         start_time = self.get_clock().now()
         while (
@@ -185,33 +184,22 @@ Are all these conditions met?""")
             and self.get_clock().now() - start_time <= test_wait
         ):
             rclpy.spin_once(self)
-
+        self.record_data = False
         if self.test_error:
-            self.record_data = False
             self.cmd_vel.twist.angular.z = 0.0
             self.get_logger().warning(f'Test aborted due to an error: {self.test_error_msg}')
             return self.test_results
 
-        # rotate for another 1s before stopping to remove noise
-        self.record_data = False
-        end_wait = Duration(seconds=1.0)
-        start_time = self.get_clock().now()
-        while (
-            not self.test_error
-            and self.get_clock().now() - start_time <= end_wait
-        ):
-            rclpy.spin_once(self)
-
-        # stop turning
+        # stop driving
+        # wait 1s to ensure we publish the command
         self.cmd_vel.twist.angular.z = 0.0
-
-        if self.test_error:
-            self.get_logger().warning(f'Test aborted due to an error: {self.test_error_msg}')
-            return self.test_results
+        test_wait = Duration(seconds=1)
+        start_time = self.get_clock().now()
+        while self.get_clock().now() - start_time <= test_wait:
+            rclpy.spin_once(self)
 
         # process the results
         results = self.test_results
-
         if len(self.gyro_samples) <= 10:
             results.append(ClearpathTestResult(
                 False,
