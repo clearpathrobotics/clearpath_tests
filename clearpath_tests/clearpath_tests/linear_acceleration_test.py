@@ -53,6 +53,7 @@ class LinearAccelerationTestNode(MobilityTestNode):
         super().__init__('Linear acceleration', 'linear_acceleration_test', setup_path)
 
         self.acceleration = self.get_parameter_or('acceleration', 0.2)
+        self.acceleration_time = self.get_parameter_or('acceleration_time', 2.5)
         self.record_data = False
 
         self.imu_num = imu_num
@@ -127,8 +128,11 @@ class LinearAccelerationTestNode(MobilityTestNode):
 
         self.test_in_progress = True
 
-        user_response = self.promptYN("""The robot will accelerate & decelerate for 10s.
-Estimated travel distance is 5m. Ensure there is sufficient room ahead of the robot.
+        # 2(1/2 at^2) -- we accelerate forwards and then decelerate symmetrically
+        goal_distance = 2 * 0.5 * self.acceleration * self.acceleration_time ** 2
+
+        user_response = self.promptYN(f"""The robot will accelerate & decelerate for 10s.
+Estimated travel distance is {goal_distance:0.1f}m. Ensure there is sufficient room ahead of the robot.
 The robot must be on the ground, all e-stops cleared, and a 2m safety clearance around the robot.
 Are all these conditions met?""")
         if user_response == 'N':
@@ -159,7 +163,7 @@ Are all these conditions met?""")
             )]
 
         # accelerate & decelerate over 5s
-        accel_duration = Duration(seconds=2.5)
+        accel_duration = Duration(seconds=self.acceleration_time)
         start_time = self.get_clock().now()
         self.record_data = True
         while (
@@ -175,7 +179,7 @@ Are all these conditions met?""")
             and self.get_clock().now() - start_time <= accel_duration
         ):
             dt = (self.get_clock().now() - start_time).nanoseconds / 1_000_000_000
-            self.cmd_vel.twist.linear.x = self.acceleration * (2.5 - dt)
+            self.cmd_vel.twist.linear.x = self.acceleration * (self.acceleration_time - dt)
             rclpy.spin_once(self)
         if self.test_error:
             self.get_logger().warning(f'Test aborted due to an error: {self.test_error_msg}')
