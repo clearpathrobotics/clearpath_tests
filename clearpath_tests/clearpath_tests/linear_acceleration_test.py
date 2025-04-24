@@ -165,18 +165,18 @@ Are all these conditions met?""")
         # accelerate & decelerate over 5s
         accel_duration = Duration(seconds=self.acceleration_time)
         start_time = self.get_clock().now()
-        self.record_data = True
         while (
             not self.test_error
             and self.get_clock().now() - start_time <= accel_duration
         ):
             dt = (self.get_clock().now() - start_time).nanoseconds / 1_000_000_000
             self.cmd_vel.twist.linear.x = self.acceleration * dt
+            self.record_data = True
             rclpy.spin_once(self)
-        start_time = self.get_clock().now()
         self.record_data = False
 
         # smoothly decelerate, but stop don't record any more data
+        start_time = self.get_clock().now()
         while (
             not self.test_error
             and self.get_clock().now() - start_time <= accel_duration
@@ -184,9 +184,6 @@ Are all these conditions met?""")
             dt = (self.get_clock().now() - start_time).nanoseconds / 1_000_000_000
             self.cmd_vel.twist.linear.x = self.acceleration * (self.acceleration_time - dt)
             rclpy.spin_once(self)
-        if self.test_error:
-            self.get_logger().warning(f'Test aborted due to an error: {self.test_error_msg}')
-            return self.test_results
 
         # stop driving
         # wait 1s to ensure we publish the command
@@ -198,7 +195,7 @@ Are all these conditions met?""")
 
         # process the results
         results = self.test_results
-        if len(self.accel_samples) <= 10:
+        if len(self.accel_samples) <= self.acceleration_time * 10:
             results.append(ClearpathTestResult(
                 False,
                 self.test_name,
@@ -232,7 +229,7 @@ Are all these conditions met?""")
     def ssq(self, arr, avg):
         result = 0.0
         for x in arr:
-            result += (arr - avg) ** 2
+            result += (x - avg) ** 2
         return result
 
 
