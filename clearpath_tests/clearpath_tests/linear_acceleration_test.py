@@ -53,7 +53,7 @@ class LinearAccelerationTestNode(MobilityTestNode):
         super().__init__('Linear acceleration', 'linear_acceleration_test', setup_path)
 
         self.acceleration = self.get_parameter_or('acceleration', 0.2)
-        self.acceleration_time = self.get_parameter_or('acceleration_time', 2.5)
+        self.acceleration_time = self.get_parameter_or('acceleration_time', 4.0)
         self.record_data = False
 
         self.imu_num = imu_num
