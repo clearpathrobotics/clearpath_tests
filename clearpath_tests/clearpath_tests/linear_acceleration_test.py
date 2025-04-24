@@ -173,9 +173,8 @@ Are all these conditions met?""")
             dt = (self.get_clock().now() - start_time).nanoseconds / 1_000_000_000
             self.cmd_vel.twist.linear.x = self.acceleration * dt
             rclpy.spin_once(self)
-        fwd_samples = self.accel_samples
-        self.accel_samples = []
         start_time = self.get_clock().now()
+        change_index = len(self.accel_samples)
         while (
             not self.test_error
             and self.get_clock().now() - start_time <= accel_duration
@@ -183,7 +182,6 @@ Are all these conditions met?""")
             dt = (self.get_clock().now() - start_time).nanoseconds / 1_000_000_000
             self.cmd_vel.twist.linear.x = self.acceleration * (self.acceleration_time - dt)
             rclpy.spin_once(self)
-        rev_samples = self.accel_samples
         if self.test_error:
             self.get_logger().warning(f'Test aborted due to an error: {self.test_error_msg}')
             return self.test_results
@@ -199,13 +197,16 @@ Are all these conditions met?""")
 
         # process the results
         results = self.test_results
-        if len(fwd_samples) + len(rev_samples) <= 10:
+        if len(self.accel_samples) <= 10:
             results.append(ClearpathTestResult(
                 False,
                 self.test_name,
-                f'Insufficient IMU data recorded ({len(fwd_samples) + len(rev_samples)}): is the IMU publishing at the correct rate?',  # noqa: E501
+                f'Insufficient IMU data recorded ({len(self.accel_samples)}): is the IMU publishing at the correct rate?',  # noqa: E501
             ))
         else:
+            fwd_samples = self.accel_samples[0:change_index]
+            rev_samples = self.accel_samples[change_index:]
+
             fwd_accel = sum(accel.vector.x for accel in fwd_samples) / len(fwd_samples)
             rev_accel = sum(accel.vector.x for accel in rev_samples) / len(rev_samples)
             min_accuracy = 0.8
