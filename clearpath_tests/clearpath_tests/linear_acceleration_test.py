@@ -173,6 +173,8 @@ Are all these conditions met?""")
             dt = (self.get_clock().now() - start_time).nanoseconds / 1_000_000_000
             self.cmd_vel.twist.linear.x = self.acceleration * dt
             rclpy.spin_once(self)
+        fwd_samples = self.accel_samples
+        self.accel_samples = []
         start_time = self.get_clock().now()
         while (
             not self.test_error
@@ -181,6 +183,7 @@ Are all these conditions met?""")
             dt = (self.get_clock().now() - start_time).nanoseconds / 1_000_000_000
             self.cmd_vel.twist.linear.x = self.acceleration * (self.acceleration_time - dt)
             rclpy.spin_once(self)
+        rev_samples = self.accel_samples
         if self.test_error:
             self.get_logger().warning(f'Test aborted due to an error: {self.test_error_msg}')
             return self.test_results
@@ -196,25 +199,49 @@ Are all these conditions met?""")
 
         # process the results
         results = self.test_results
-        if len(self.accel_samples) <= 10:
+        if len(fwd_samples) + len(rev_samples) <= 10:
             results.append(ClearpathTestResult(
                 False,
                 self.test_name,
-                f'Insufficient IMU data recorded ({len(self.accel_samples)}): is the IMU publishing at the correct rate?',  # noqa: E501
+                f'Insufficient IMU data recorded ({len(fwd_samples) + len(rev_samples)}): is the IMU publishing at the correct rate?',  # noqa: E501
             ))
         else:
-            avg_accel = sum(abs(accel.vector.x) for accel in self.accel_samples) / len(self.accel_samples)  # noqa: E501
+            fwd_accel = sum(accel.vector.x for accel in fwd_samples) / len(fwd_samples)
+            rev_accel = sum(accel.vector.x for accel in rev_samples) / len(rev_samples)
             min_accuracy = 0.8
 
             if self.clearpath_config.platform.get_platform_model() == Platform.J100:
                 # default Jackal IMU is terrible, so allow wider margins
                 min_accuracy = 0.6
 
-            measured_accuracy = min(avg_accel, self.acceleration) / max(avg_accel, self.acceleration)  # noqa: E501
+            measured_accuracy = (
+                min(abs(fwd_accel), abs(self.acceleration)) /
+                max(abs(fwd_accel), abs(self.acceleration))
+            )
             results.append(ClearpathTestResult(
                 measured_accuracy >= min_accuracy,
                 self.test_name,
-                f'Recorded linear acceleration: {avg_accel}m/s^2 (accuracy: {measured_accuracy:0.2f})'  # noqa: E501
+                f'Recorded linear acceleration: {fwd_accel:0.2f}m/s^2 (accuracy: {measured_accuracy:0.2f})'  # noqa: E501
+            ))
+            results.append(ClearpathTestResult(
+                fwd_accel > 0,
+                self.test_name,
+                'Acceleration oriented correctly'
+            ))
+
+            measured_accuracy = (
+                min(abs(rev_accel), abs(self.acceleration)) /
+                max(abs(rev_accel), abs(self.acceleration))
+            )
+            results.append(ClearpathTestResult(
+                measured_accuracy >= min_accuracy,
+                self.test_name,
+                f'Recorded linear deceleration: {rev_accel:0.2f}m/s^2 (accuracy: {measured_accuracy:0.2f})'  # noqa: E501
+            ))
+            results.append(ClearpathTestResult(
+                rev_accel < 0,
+                self.test_name,
+                'Deceleration oriented correctly'
             ))
 
         return results
