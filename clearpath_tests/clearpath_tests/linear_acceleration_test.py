@@ -132,7 +132,8 @@ class LinearAccelerationTestNode(MobilityTestNode):
         goal_distance = 2 * 0.5 * self.acceleration * self.acceleration_time ** 2
 
         user_response = self.promptYN(f"""The robot will accelerate & decelerate for 10s.
-Estimated travel distance is {goal_distance:0.1f}m. Ensure there is sufficient room ahead of the robot.
+Estimated travel distance is {goal_distance:0.1f}m.
+Ensure there is sufficient room ahead of the robot.
 The robot must be on the ground, all e-stops cleared, and a 2m safety clearance around the robot.
 Are all these conditions met?""")
         if user_response == 'N':
