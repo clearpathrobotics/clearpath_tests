@@ -199,7 +199,7 @@ Are all these conditions met?""")
                 f'Insufficient IMU data recorded ({len(self.accel_samples)}): is the IMU publishing at the correct rate?',  # noqa: E501
             ))
         else:
-            avg_accel = sum(accel.vector.x for accel in self.accel_samples) / len(self.accel_samples)  # noqa: E501
+            avg_accel = sum(abs(accel.vector.x) for accel in self.accel_samples) / len(self.accel_samples)  # noqa: E501
             min_accuracy = 0.8
 
             if self.clearpath_config.platform.get_platform_model() == Platform.J100:
