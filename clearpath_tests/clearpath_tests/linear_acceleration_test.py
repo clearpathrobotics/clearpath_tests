@@ -53,7 +53,7 @@ class LinearAccelerationTestNode(MobilityTestNode):
         super().__init__('Linear acceleration', 'linear_acceleration_test', setup_path)
 
         self.acceleration = self.get_parameter_or('acceleration', 0.2)
-        self.acceleration_time = self.get_parameter_or('acceleration_time', 4.0)
+        self.acceleration_time = self.get_parameter_or('acceleration_time', 5.0)
         self.record_data = False
 
         self.imu_num = imu_num
@@ -174,7 +174,9 @@ Are all these conditions met?""")
             self.cmd_vel.twist.linear.x = self.acceleration * dt
             rclpy.spin_once(self)
         start_time = self.get_clock().now()
-        change_index = len(self.accel_samples)
+        self.record_data = False
+
+        # smoothly decelerate, but stop don't record any more data
         while (
             not self.test_error
             and self.get_clock().now() - start_time <= accel_duration
@@ -185,7 +187,6 @@ Are all these conditions met?""")
         if self.test_error:
             self.get_logger().warning(f'Test aborted due to an error: {self.test_error_msg}')
             return self.test_results
-        self.record_data = False
 
         # stop driving
         # wait 1s to ensure we publish the command
@@ -204,48 +205,35 @@ Are all these conditions met?""")
                 f'Insufficient IMU data recorded ({len(self.accel_samples)}): is the IMU publishing at the correct rate?',  # noqa: E501
             ))
         else:
-            fwd_samples = self.accel_samples[0:change_index]
-            rev_samples = self.accel_samples[change_index:]
-
-            fwd_accel = sum(accel.vector.x for accel in fwd_samples) / len(fwd_samples)
-            rev_accel = sum(accel.vector.x for accel in rev_samples) / len(rev_samples)
-            min_accuracy = 0.8
+            avg_accel = sum(accel.vector.x for accel in self.accel_samples) / len(self.accel_samples)  # noqa: E501
+            max_error = 0.2
 
             if self.clearpath_config.platform.get_platform_model() == Platform.J100:
                 # default Jackal IMU is terrible, so allow wider margins
-                min_accuracy = 0.6
+                max_error = 0.3
 
-            measured_accuracy = (
-                min(abs(fwd_accel), abs(self.acceleration)) /
-                max(abs(fwd_accel), abs(self.acceleration))
+            measured_error = self.ssq(
+                [accel.vector.x for accel in self.accel_samples],
+                self.acceleration,
             )
             results.append(ClearpathTestResult(
-                measured_accuracy >= min_accuracy,
+                measured_error <= max_error,
                 self.test_name,
-                f'Recorded linear acceleration: {fwd_accel:0.2f}m/s^2 (accuracy: {measured_accuracy:0.2f})'  # noqa: E501
+                f'Recorded linear acceleration: {avg_accel:0.2f}m/s^2 (error: {measured_error:0.2f})'  # noqa: E501
             ))
             results.append(ClearpathTestResult(
-                fwd_accel > 0,
+                avg_accel > 0,
                 self.test_name,
                 'Acceleration oriented correctly'
             ))
 
-            measured_accuracy = (
-                min(abs(rev_accel), abs(self.acceleration)) /
-                max(abs(rev_accel), abs(self.acceleration))
-            )
-            results.append(ClearpathTestResult(
-                measured_accuracy >= min_accuracy,
-                self.test_name,
-                f'Recorded linear deceleration: {rev_accel:0.2f}m/s^2 (accuracy: {measured_accuracy:0.2f})'  # noqa: E501
-            ))
-            results.append(ClearpathTestResult(
-                rev_accel < 0,
-                self.test_name,
-                'Deceleration oriented correctly'
-            ))
-
         return results
+
+    def ssq(self, arr, avg):
+        result = 0.0
+        for x in arr:
+            result += (arr - avg) ** 2
+        return result
 
 
 def main():
