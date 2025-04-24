@@ -203,20 +203,17 @@ Are all these conditions met?""")
             ))
         else:
             avg_accel = sum(accel.vector.x for accel in self.accel_samples) / len(self.accel_samples)  # noqa: E501
-            max_error = 0.2
+            min_accuracy = 0.8
 
             if self.clearpath_config.platform.get_platform_model() == Platform.J100:
                 # default Jackal IMU is terrible, so allow wider margins
-                max_error = 0.3
+                min_accuracy = 0.6
 
-            measured_error = self.ssq(
-                [accel.vector.x for accel in self.accel_samples],
-                self.acceleration,
-            )
+            measured_accuracy = min(avg_accel, self.acceleration) / max(avg_accel, self.acceleration)  # noqa: E501
             results.append(ClearpathTestResult(
-                measured_error <= max_error,
+                measured_accuracy >= min_accuracy,
                 self.test_name,
-                f'Recorded linear acceleration: {avg_accel:0.2f}m/s^2 (error: {measured_error:0.2f})'  # noqa: E501
+                f'Recorded linear acceleration: {avg_accel:0.2f}m/s^2 (accuracy: {measured_accuracy:0.2f})'  # noqa: E501
             ))
             results.append(ClearpathTestResult(
                 avg_accel > 0,
@@ -225,12 +222,6 @@ Are all these conditions met?""")
             ))
 
         return results
-
-    def ssq(self, arr, avg):
-        result = 0.0
-        for x in arr:
-            result += (x - avg) ** 2
-        return result
 
 
 def main():
