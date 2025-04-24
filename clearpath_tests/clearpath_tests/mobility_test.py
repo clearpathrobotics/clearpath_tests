@@ -107,9 +107,9 @@ class MobilityTestNode(ClearpathTestNode):
             qos_profile_sensor_data,
         )
 
-        self.get_logger().info(f'Waiting for odometry on {self.odom_topic}...')
+        self.get_logger().info(f'Subscribing to odometry on {self.odom_topic}...')
 
-        self.publisher = self.create_publisher(
+        self.cmd_vel_publisher = self.create_publisher(
             TwistStamped,
             self.drive_topic,
             qos_profile_system_default,
@@ -170,7 +170,7 @@ class MobilityTestNode(ClearpathTestNode):
 
     def publish_callback(self):
         self.cmd_vel.header.stamp = self.get_clock().now().to_msg()
-        self.publisher.publish(self.cmd_vel)
+        self.cmd_vel_publisher.publish(self.cmd_vel)
 
     def lynx_callback(self, lynx_status: LynxSystemProtection):
         if not self.test_in_progress or self.test_done or self.test_error:
